@@ -8,12 +8,6 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
 
-      /// APPBAR
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2F80ED),
-        elevation: 0,
-      ),
-
       /// BODY
       body: Container(
         width: double.infinity,
