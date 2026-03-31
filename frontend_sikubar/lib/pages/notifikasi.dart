@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_menuwarga.dart';
 
 class NotifikasiPage extends StatelessWidget {
   const NotifikasiPage({super.key});
@@ -7,11 +6,6 @@ class NotifikasiPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      /// APPBAR
-      appBar: const AppBarSiKubar(
-        title: "Notifikasi",
-      ),
 
       /// BODY
       body: Container(

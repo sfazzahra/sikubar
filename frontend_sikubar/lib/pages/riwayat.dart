@@ -8,11 +8,6 @@ class RiwayatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
 
-      /// APPBAR DENGAN LONCENG
-      appBar: const AppBarSiKubar(
-        title: "Riwayat",
-      ),
-
       /// BODY
       body: Container(
         width: double.infinity,

@@ -7,6 +7,8 @@ import '../pages/notifikasi.dart';
 import '../pages/riwayat.dart';
 import '../pages/profilewarga.dart';
 
+/// ================= APP BAR =================
+
 class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
@@ -22,7 +24,7 @@ class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       backgroundColor: const Color(0xFF2F80ED),
       foregroundColor: Colors.white,
-
+      elevation: 0,
       actions: [
         IconButton(
           icon: const Icon(Icons.notifications),
@@ -46,7 +48,6 @@ class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
 /// ================= BOTTOM MENU =================
 
 class BottomMenu extends StatelessWidget {
-
   final int currentIndex;
 
   const BottomMenu({
@@ -55,6 +56,7 @@ class BottomMenu extends StatelessWidget {
   });
 
   void _navigate(BuildContext context, int index) {
+    if (index == currentIndex) return; // ✅ biar gak reload page yang sama
 
     Widget page;
 
@@ -86,39 +88,32 @@ class BottomMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       selectedItemColor: const Color(0xFF1C4FA1),
       unselectedItemColor: Colors.grey,
+      showUnselectedLabels: true,
 
-      onTap: (index) {
-        _navigate(context, index);
-      },
+      onTap: (index) => _navigate(context, index),
 
       items: const [
-
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: "Beranda",
         ),
-
         BottomNavigationBarItem(
           icon: Icon(Icons.description),
           label: "Pengajuan",
         ),
-
         BottomNavigationBarItem(
           icon: Icon(Icons.report_problem),
           label: "Pengaduan",
         ),
-
         BottomNavigationBarItem(
           icon: Icon(Icons.history),
           label: "Riwayat",
         ),
-
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: "Profil",

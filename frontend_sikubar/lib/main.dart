@@ -9,6 +9,8 @@ import 'pages/pengaduan.dart';
 import 'pages/notifikasi.dart';
 import 'pages/riwayat.dart';
 
+
+
 void main() {
   runApp(const MyApp());
 }
@@ -35,6 +37,7 @@ class MyApp extends StatelessWidget {
         '/riwayat': (context) => const RiwayatPage(),
 
         '/profile': (context) => const ProfilePage(),
+        
       },
     );
   }

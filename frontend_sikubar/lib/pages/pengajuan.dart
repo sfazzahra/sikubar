@@ -38,10 +38,6 @@ class _PengajuanPageState extends State<PengajuanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarSiKubar(
-        title: "",
-      ),
-
       body: SafeArea(
         child: Container(
           width: double.infinity,
