@@ -66,7 +66,7 @@ class _PengajuanPageState extends State<PengajuanPage> {
                 const SizedBox(height: 10),
 
                 const Text(
-                  "Pelayanan Publik",
+                  "Pengajuan Surat",
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -77,17 +77,6 @@ class _PengajuanPageState extends State<PengajuanPage> {
                 const Text(
                   "Kantor Kecamatan Kundur Barat",
                   style: TextStyle(color: Colors.white70),
-                ),
-
-                const SizedBox(height: 20),
-
-                const Text(
-                  "Pengajuan Surat",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
                 ),
 
                 const SizedBox(height: 20),

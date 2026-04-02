@@ -46,7 +46,7 @@ class ProfilePage extends StatelessWidget {
 
                     /// JUDUL APLIKASI
                     const Text(
-                      "Pelayanan Publik",
+                      "Profil Saya",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -62,18 +62,6 @@ class ProfilePage extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 15),
-
-                    /// JUDUL HALAMAN
-                    const Text(
-                      "Profil Saya",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
 
                     /// CARD PROFIL
                     Container(
