@@ -8,52 +8,96 @@ class NotifikasiPage extends StatelessWidget {
     return Scaffold(
 
       /// BODY
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF2F80ED),
-              Color(0xFF1C4FA1),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF2F80ED),
+                Color(0xFF1C4FA1),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
 
-        child: ListView(
-          padding: const EdgeInsets.all(15),
-          children: const [
+          child: Column(
+            children: [
 
-            NotifikasiItem(
-              icon: Icons.description,
-              title: "Pengajuan Surat Diproses",
-              message: "Pengajuan surat domisili Anda sedang diproses.",
-              time: "5 menit lalu",
-            ),
+              /// ================= HEADER (BACK + TITLE) =================
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
 
-            NotifikasiItem(
-              icon: Icons.check_circle,
-              title: "Pengajuan Disetujui",
-              message: "Surat keterangan usaha Anda telah disetujui.",
-              time: "1 jam lalu",
-            ),
+                    /// 🔙 BUTTON BACK
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
 
-            NotifikasiItem(
-              icon: Icons.report_problem,
-              title: "Pengaduan Diterima",
-              message: "Pengaduan Anda telah diterima oleh petugas.",
-              time: "Kemarin",
-            ),
+                    const SizedBox(width: 5),
 
-          ],
+                    /// TITLE
+                    const Text(
+                      "Notifikasi",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              /// ================= LIST =================
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(15),
+                  children: const [
+
+                    NotifikasiItem(
+                      icon: Icons.description,
+                      title: "Pengajuan Surat Diproses",
+                      message: "Pengajuan surat domisili Anda sedang diproses.",
+                      time: "5 menit lalu",
+                    ),
+
+                    NotifikasiItem(
+                      icon: Icons.check_circle,
+                      title: "Pengajuan Disetujui",
+                      message: "Surat keterangan usaha Anda telah disetujui.",
+                      time: "1 jam lalu",
+                    ),
+
+                    NotifikasiItem(
+                      icon: Icons.report_problem,
+                      title: "Pengaduan Diterima",
+                      message: "Pengaduan Anda telah diterima oleh petugas.",
+                      time: "Kemarin",
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// ================= WIDGET ITEM NOTIFIKASI =================
+/// ================= ITEM =================
 
 class NotifikasiItem extends StatelessWidget {
   final IconData icon;
@@ -74,7 +118,6 @@ class NotifikasiItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -123,7 +166,6 @@ class NotifikasiItem extends StatelessWidget {
                     color: Colors.grey,
                   ),
                 ),
-
               ],
             ),
           ),

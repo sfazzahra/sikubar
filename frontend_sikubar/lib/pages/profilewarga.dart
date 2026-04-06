@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_menuwarga.dart';
+import '../ds.dart';
+import '../model/mprofil.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  State<ProfilePage> createState() => _ProfilePageState();
+}
 
-      /// BODY
+class _ProfilePageState extends State<ProfilePage> {
+
+  @override
+  Widget build(BuildContext context) {
+    final profil = DataStore.profil;
+
+    return Scaffold(
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
@@ -35,7 +43,6 @@ class ProfilePage extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    /// ICON GEDUNG
                     const Icon(
                       Icons.account_balance,
                       size: 70,
@@ -44,7 +51,6 @@ class ProfilePage extends StatelessWidget {
 
                     const SizedBox(height: 10),
 
-                    /// JUDUL APLIKASI
                     const Text(
                       "Profil Saya",
                       style: TextStyle(
@@ -67,7 +73,6 @@ class ProfilePage extends StatelessWidget {
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 20),
                       padding: const EdgeInsets.all(20),
-
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -77,7 +82,6 @@ class ProfilePage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
 
-                          /// FOTO PROFIL
                           const CircleAvatar(
                             radius: 45,
                             backgroundImage:
@@ -86,9 +90,9 @@ class ProfilePage extends StatelessWidget {
 
                           const SizedBox(height: 10),
 
-                          const Text(
-                            "Zahra",
-                            style: TextStyle(
+                          Text(
+                            profil.nama, // ✅ dari DataStore
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -96,12 +100,10 @@ class ProfilePage extends StatelessWidget {
 
                           const SizedBox(height: 20),
 
-                          /// DATA PROFIL
-                          profileItem(Icons.badge, "NIK", "1234567890123456"),
-                          profileItem(Icons.person, "Nama Lengkap",
-                              "Siti Fatimah Az-zahra"),
-                          profileItem(Icons.location_on, "Alamat", "Batam"),
-                          profileItem(Icons.phone, "No HP", "08123456789"),
+                          profileItem(Icons.badge, "NIK", profil.nik),
+                          profileItem(Icons.person, "Nama Lengkap", profil.nama),
+                          profileItem(Icons.location_on, "Alamat", profil.alamat),
+                          profileItem(Icons.phone, "No HP", profil.noHp),
 
                           const SizedBox(height: 20),
 
@@ -124,7 +126,7 @@ class ProfilePage extends StatelessWidget {
 
                           const SizedBox(height: 10),
 
-                          /// BUTTON LOGOUT
+                          /// BUTTON LOGOUT (TETAP)
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
@@ -158,58 +160,49 @@ class ProfilePage extends StatelessWidget {
         ),
       ),
 
-      /// MENU BAWAH
-      bottomNavigationBar: const BottomMenu(
-        currentIndex: 4,
-      ),
+      bottomNavigationBar: const BottomMenu(currentIndex: 4),
     );
   }
 
-  /// WIDGET DATA PROFIL
+  /// WIDGET DATA PROFIL (TETAP)
   static Widget profileItem(IconData icon, String title, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-
           Icon(icon, color: Colors.blue),
-
           const SizedBox(width: 10),
-
           Text(
             "$title : ",
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
   }
 
-  /// MODAL EDIT PROFIL
-  static void _showEditProfileModal(BuildContext context) {
+  /// 🔥 EDIT PROFIL (SUDAH NYAMBUNG DATASTORE)
+  void _showEditProfileModal(BuildContext context) {
+    final profil = DataStore.profil;
+
+    final namaController = TextEditingController(text: profil.nama);
+    final alamatController = TextEditingController(text: profil.alamat);
+    final hpController = TextEditingController(text: profil.noHp);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
-
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-
           child: Container(
             padding: const EdgeInsets.all(20),
-
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -225,6 +218,7 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 TextField(
+                  controller: namaController,
                   decoration: InputDecoration(
                     labelText: "Nama Lengkap",
                     prefixIcon: const Icon(Icons.person),
@@ -237,6 +231,7 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 TextField(
+                  controller: alamatController,
                   decoration: InputDecoration(
                     labelText: "Alamat",
                     prefixIcon: const Icon(Icons.location_on),
@@ -249,6 +244,7 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 TextField(
+                  controller: hpController,
                   decoration: InputDecoration(
                     labelText: "No HP",
                     prefixIcon: const Icon(Icons.phone),
@@ -267,6 +263,16 @@ class ProfilePage extends StatelessWidget {
                       backgroundColor: const Color(0xFF1C4FA1),
                     ),
                     onPressed: () {
+                      DataStore.updateProfil(
+                        Profil(
+                          nik: profil.nik,
+                          nama: namaController.text,
+                          alamat: alamatController.text,
+                          noHp: hpController.text,
+                        ),
+                      );
+
+                      setState(() {});
                       Navigator.pop(context);
                     },
                     child: const Text(
@@ -285,7 +291,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  /// POPUP KONFIRMASI LOGOUT
+  /// LOGOUT (TETAP)
   static void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -293,16 +299,11 @@ class ProfilePage extends StatelessWidget {
         return AlertDialog(
           title: const Text("Konfirmasi Logout"),
           content: const Text("Apakah Anda yakin ingin logout?"),
-
           actions: [
-
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text("Batal"),
             ),
-
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
