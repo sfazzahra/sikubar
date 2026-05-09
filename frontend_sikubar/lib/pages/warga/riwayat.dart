@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_menuwarga.dart';
+import '../../widgets/bottom_menuwarga.dart';
 
 class RiwayatPage extends StatelessWidget {
   const RiwayatPage({super.key});
 
-  /// DATA DUMMY
   final List<Map<String, String>> semuaPengajuan = const [
     {
       "jenis": "Surat Keterangan Domisili",
@@ -34,56 +33,67 @@ class RiwayatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /// FILTER → HANYA YANG SELESAI
     final riwayatList = semuaPengajuan.where((data) {
       return data["status"] == "Disetujui" ||
              data["status"] == "Ditolak";
     }).toList();
 
     return Scaffold(
-      body: SafeArea(
-        child: Container(
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF2F80ED),
-                Color(0xFF1C4FA1),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF2F80ED), Color(0xFF56CCF2)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
+        ),
 
+        child: SafeArea(
           child: Column(
             children: [
-              const SizedBox(height: 20),
 
-              /// LOGO
-              const Icon(
-                Icons.account_balance,
-                size: 70,
-                color: Colors.white,
-              ),
+              /// 🔥 HEADER BARU (TANPA NOTIF)
+              SizedBox(
+                height: 90,
+                child: Stack(
+                  children: [
 
-              const SizedBox(height: 10),
+                    /// BACK
+                    if (Navigator.canPop(context))
+                      Positioned(
+                        left: 16,
+                        top: 10,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(Icons.arrow_back,
+                              color: Colors.white, size: 26),
+                        ),
+                      ),
 
-              /// JUDUL
-              const Text(
-                "Riwayat Pengajuan",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                    /// TITLE
+                    const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.account_balance,
+                              color: Colors.white, size: 32),
+                          SizedBox(height: 4),
+                          Text(
+                            "Riwayat Pengajuan",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              const Text(
-                "Kantor Kecamatan Kundur Barat",
-                style: TextStyle(color: Colors.white70),
-              ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               /// LIST
               Expanded(
@@ -114,7 +124,6 @@ class RiwayatPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
 
-                                /// JENIS SURAT
                                 Text(
                                   data["jenis"] ?? "-",
                                   style: const TextStyle(
@@ -125,7 +134,6 @@ class RiwayatPage extends StatelessWidget {
 
                                 const SizedBox(height: 8),
 
-                                /// ALASAN
                                 Text(
                                   data["alasan"] ?? "-",
                                   style: const TextStyle(fontSize: 12),
@@ -133,7 +141,6 @@ class RiwayatPage extends StatelessWidget {
 
                                 const SizedBox(height: 10),
 
-                                /// FILE
                                 Row(
                                   children: [
                                     const Icon(Icons.insert_drive_file, size: 16),
@@ -144,7 +151,6 @@ class RiwayatPage extends StatelessWidget {
 
                                 const SizedBox(height: 10),
 
-                                /// STATUS
                                 Row(
                                   children: [
                                     const Text("Status: "),
@@ -180,7 +186,6 @@ class RiwayatPage extends StatelessWidget {
     );
   }
 
-  /// WARNA STATUS
   Color _getStatusColor(String status) {
     switch (status) {
       case "Disetujui":

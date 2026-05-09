@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 
+// ================= AUTH =================
 import 'pages/loginpage.dart';
 import 'pages/daftarpage.dart';
-import 'pages/profilewarga.dart';
-import 'pages/beranda.dart';
-import 'pages/pengajuan.dart';
-import 'pages/pengaduan.dart';
-import 'pages/notifikasi.dart';
-import 'pages/riwayat.dart';
 
+// ================= WARGA =================
+import 'pages/warga/beranda.dart';
+import 'pages/warga/pengajuan.dart';
+import 'pages/warga/pengaduan.dart' as warga;
+import 'pages/warga/notifikasi.dart';
+import 'pages/warga/riwayat.dart';
+import 'pages/warga/profilewarga.dart' as wargaProfile;
 
+// ================= PETUGAS =================
+import 'pages/petugas/main_page.dart';
+
+// ================= CAMAT =================
+import 'pages/camat/main_pagecamat.dart';
+
+// ================= KASI =================
+import 'pages/kasi/main_kasipage.dart';
+
+// ================= ADMIN =================
+import 'pages/admin/admin.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,21 +37,39 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SiKubar',
 
+      ///UNTUK TEST ROLE
       initialRoute: '/',
+      // '/warga'
+      // '/petugas'
+      // '/camat'
+      // '/kasi' // 👉 kalau mau test KASI
 
       routes: {
+        /// ================= AUTH =================
         '/': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
 
+        /// ================= WARGA =================
+        '/warga': (context) => const BerandaPage(),
         '/beranda': (context) => const BerandaPage(),
         '/pengajuan': (context) => const PengajuanPage(),
-        '/pengaduan': (context) => const PengaduanPage(),
+        '/pengaduan': (context) => const warga.PengaduanPage(),
         '/notifikasi': (context) => const NotifikasiPage(),
         '/riwayat': (context) => const RiwayatPage(),
+        '/profile': (context) => const wargaProfile.ProfilePage(),
 
-        '/profile': (context) => const ProfilePage(),
-        
-      },
+        /// ================= PETUGAS =================
+        '/petugas': (context) => const MainPage(),
+
+        /// ================= CAMAT =================
+        '/camat': (context) => const MainPageCamat(),
+
+        /// ================= KASI =================
+        '/kasi': (context) => const MainPageKasi(),
+
+        // ================= KASI =================
+        '/admin': (context) => const AdminPage(),
+      }
     );
   }
 }

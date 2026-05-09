@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../pages/warga/beranda.dart';
-import '../pages/warga/pengajuan.dart';
-import '../pages/warga/pengaduan.dart';
-import '../pages/warga/notifikasi.dart';
-import '../pages/warga/riwayat.dart';
-import '../pages/warga/profilewarga.dart';
+// 🔥 IMPORT HALAMAN CAMAT
+import '../pages/camat/berandacamat.dart';
+import '../pages/camat/profilecamat.dart';
+import '../pages/camat/persetujuan.dart';
+import '../pages/camat/monitoringcamat.dart';
+import '../pages/camat/pengaduancamat.dart';
+import '../pages/camat/notifikasicamat.dart';
 
 /// ================= APP BAR =================
-class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
+class AppBarCamat extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
-  const AppBarSiKubar({
+  const AppBarCamat({
     super.key,
     required this.title,
   });
@@ -66,17 +67,19 @@ class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
 
-                /// 🔔 NOTIF (KANAN ATAS)
+                /// 🔔 NOTIF
                 Positioned(
                   right: 10,
                   top: 10,
                   child: IconButton(
-                    icon: const Icon(Icons.notifications, color: Colors.white),
+                    icon: const Icon(Icons.notifications,
+                        color: Colors.white),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NotifikasiPage(),
+                          builder: (context) =>
+                              const NotifikasiCamatPage(),
                         ),
                       );
                     },
@@ -94,11 +97,11 @@ class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(100);
 }
 
-/// ================= BOTTOM MENU =================
-class BottomMenu extends StatelessWidget {
+/// ================= BOTTOM MENU CAMAT =================
+class BottomMenuCamat extends StatelessWidget {
   final int currentIndex;
 
-  const BottomMenu({
+  const BottomMenuCamat({
     super.key,
     required this.currentIndex,
   });
@@ -110,22 +113,22 @@ class BottomMenu extends StatelessWidget {
 
     switch (index) {
       case 0:
-        page = const BerandaPage();
+        page = const BerandaCamatPage();
         break;
       case 1:
-        page = const ProfilePage();
+        page = const ProfilCamatPage();
         break;
       case 2:
-        page = const PengajuanPage();
+        page = const PersetujuanPage();
         break;
       case 3:
-        page = const RiwayatPage();
+        page = const MonitoringPage();
         break;
       case 4:
-        page = const PengaduanPage();
+        page = const PengaduanCamatPage();
         break;
       default:
-        page = const BerandaPage();
+        page = const BerandaCamatPage();
     }
 
     Navigator.pushReplacement(
@@ -143,6 +146,7 @@ class BottomMenu extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       showUnselectedLabels: true,
       onTap: (index) => _navigate(context, index),
+
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
@@ -153,12 +157,12 @@ class BottomMenu extends StatelessWidget {
           label: "Profil",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.description),
-          label: "Pengajuan",
+          icon: Icon(Icons.check_circle),
+          label: "Persetujuan",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.history),
-          label: "Riwayat",
+          icon: Icon(Icons.bar_chart),
+          label: "Monitoring",
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.report_problem),

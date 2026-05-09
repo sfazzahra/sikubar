@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_menuwarga.dart';
+import '../../../widgets/bottom_menuwarga.dart';
 
 class BerandaPage extends StatelessWidget {
   const BerandaPage({super.key});

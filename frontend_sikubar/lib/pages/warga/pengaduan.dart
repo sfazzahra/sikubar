@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_menuwarga.dart';
-import '../ds.dart';
-import '../model/mpengaduan.dart';
+import '../../widgets/bottom_menuwarga.dart';
+import '../../ds.dart';
+import '../../model/mpengaduan.dart';
 
 class PengaduanPage extends StatefulWidget {
   const PengaduanPage({super.key});
@@ -16,52 +16,81 @@ class _PengaduanPageState extends State<PengaduanPage> {
 
   final TextEditingController isiController = TextEditingController();
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        body: SafeArea(
-          child: Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF2F80ED),
-                  Color(0xFF1C4FA1),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+
+        /// 🔥 BODY + BACKGROUND
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2F80ED), Color(0xFF56CCF2)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
+          ),
+
+          child: SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 20),
 
-                const Icon(
-                  Icons.account_balance,
-                  size: 70,
-                  color: Colors.white,
-                ),
+                /// 🔥 HEADER CUSTOM
+                SizedBox(
+                  height: 90,
+                  child: Stack(
+                    children: [
 
-                const SizedBox(height: 10),
+                      /// BACK
+                      if (Navigator.canPop(context))
+                        Positioned(
+                          left: 16,
+                          top: 10,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(Icons.arrow_back,
+                                color: Colors.white, size: 26),
+                          ),
+                        ),
 
-                const Text(
-                  "Pengaduan Masyarakat",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                      /// NOTIF
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: IconButton(
+                          icon: const Icon(Icons.notifications,
+                              color: Colors.white),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/notifikasi');
+                          },
+                        ),
+                      ),
+
+                      /// TITLE
+                      const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.account_balance,
+                                color: Colors.white, size: 32),
+                            SizedBox(height: 4),
+                            Text(
+                              "Pengaduan Layanan",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                const Text(
-                  "Kantor Kecamatan Kundur Barat",
-                  style: TextStyle(color: Colors.white70),
-                ),
-
-                const SizedBox(height: 15),
-
+                const SizedBox(height: 10),
                 /// TAB
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -107,6 +136,7 @@ class _PengaduanPageState extends State<PengaduanPage> {
                           ),
                           child: Column(
                             children: [
+
                               DropdownButtonFormField<String>(
                                 value: kategoriPengaduan,
                                 decoration: InputDecoration(
@@ -135,9 +165,10 @@ class _PengaduanPageState extends State<PengaduanPage> {
 
                               const SizedBox(height: 15),
 
+                              /// 🔥 TEXTFIELD DIPERKECIL
                               TextField(
                                 controller: isiController,
-                                maxLines: 3,
+                                maxLines: 1, 
                                 decoration: InputDecoration(
                                   labelText: "Isi Pengaduan",
                                   border: OutlineInputBorder(
@@ -264,7 +295,7 @@ class _PengaduanPageState extends State<PengaduanPage> {
             ),
           ),
         ),
-        bottomNavigationBar: const BottomMenu(currentIndex: 2),
+        bottomNavigationBar: const BottomMenu(currentIndex: 4),
       ),
     );
   }
