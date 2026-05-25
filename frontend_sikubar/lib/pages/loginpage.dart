@@ -2,8 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
-import 'daftarpage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,7 +12,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-
   bool obscurePassword = true;
   String? selectedRole;
   bool isLoading = false;
@@ -25,7 +23,6 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
 
   Future<void> login() async {
-
     // VALIDASI ROLE
     if (selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -39,7 +36,6 @@ class _LoginPageState extends State<LoginPage> {
     // VALIDASI INPUT
     if (identifierController.text.isEmpty ||
         passwordController.text.isEmpty) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Semua field harus diisi"),
@@ -53,37 +49,60 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      // ENDPOINT BERDASARKAN ROLE
+      String endpoint;
+
+      if (selectedRole == 'warga') {
+        endpoint = "http://127.0.0.1:8000/api/warga/login";
+      } else {
+        endpoint = "http://127.0.0.1:8000/api/staff/login";
+      }
 
       final response = await http.post(
-
-        Uri.parse(
-          "http://localhost/SiKubar-PBL/api/login/login.php",
-        ),
-
+        Uri.parse(endpoint),
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
-
-        body: jsonEncode({
-          "identifier": identifierController.text,
-          "password": passwordController.text,
-        }),
+        body: jsonEncode(
+          selectedRole == 'warga'
+              ? {
+                  "nik": identifierController.text,
+                  "password": passwordController.text,
+                }
+              : {
+                  "email": identifierController.text,
+                  "password": passwordController.text,
+                },
+        ),
       );
 
       final data = jsonDecode(response.body);
+
+      print(data);
 
       setState(() {
         isLoading = false;
       });
 
       // LOGIN BERHASIL
-      if (data['success'] == true) {
+      if (response.statusCode == 200) {
+        String role =
+            data['data']?['user']?['role']?.toString() ?? '';
 
-        String role = data['role'];
+        final token =
+            data['data']?['token']?.toString() ?? '';
+
+        final prefs =
+            await SharedPreferences.getInstance();
+
+        await prefs.setString(
+          'auth_token',
+          token,
+        );
 
         // VALIDASI ROLE DENGAN DROPDOWN
         if (role != selectedRole) {
-
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text("Role tidak sesuai"),
@@ -95,57 +114,44 @@ class _LoginPageState extends State<LoginPage> {
 
         // REDIRECT BERDASARKAN ROLE
         if (role == 'admin') {
-
           Navigator.pushReplacementNamed(
             context,
             '/admin',
           );
-
         } else if (role == 'warga') {
-
           Navigator.pushReplacementNamed(
             context,
             '/beranda',
           );
-
         } else if (role == 'petugas') {
-
           Navigator.pushReplacementNamed(
             context,
             '/petugas',
           );
-
         } else if (role == 'kasi') {
-
           Navigator.pushReplacementNamed(
             context,
             '/kasi',
           );
-
         } else if (role == 'camat') {
-
           Navigator.pushReplacementNamed(
             context,
             '/camat',
           );
         }
-
       }
 
       // LOGIN GAGAL
       else {
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(data['message']),
+            content: Text(
+              data['message'] ?? 'Login gagal',
+            ),
           ),
         );
       }
-
-    }
-
-    catch (e) {
-
+    } catch (e) {
       setState(() {
         isLoading = false;
       });
@@ -160,10 +166,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: Container(
-
         width: double.infinity,
 
         decoration: const BoxDecoration(
@@ -179,10 +183,8 @@ class _LoginPageState extends State<LoginPage> {
 
         child: Center(
           child: SingleChildScrollView(
-
             child: Column(
               children: [
-
                 const Icon(
                   Icons.account_balance,
                   size: 80,
@@ -210,7 +212,6 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 30),
 
                 Container(
-
                   margin: const EdgeInsets.symmetric(
                     horizontal: 30,
                   ),
@@ -224,10 +225,8 @@ class _LoginPageState extends State<LoginPage> {
 
                   child: Column(
                     children: [
-
                       /// DROPDOWN ROLE
                       DropdownButtonFormField<String>(
-
                         value: selectedRole,
 
                         decoration: InputDecoration(
@@ -243,7 +242,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
 
                         items: const [
-
                           DropdownMenuItem(
                             value: "warga",
                             child: Text("Warga"),
@@ -264,14 +262,13 @@ class _LoginPageState extends State<LoginPage> {
                             child: Text("Camat"),
                           ),
 
-                             DropdownMenuItem(
+                          DropdownMenuItem(
                             value: "admin",
                             child: Text("Admin"),
                           ),
                         ],
 
                         onChanged: (value) {
-
                           setState(() {
                             selectedRole = value;
                           });
@@ -282,7 +279,6 @@ class _LoginPageState extends State<LoginPage> {
 
                       /// IDENTIFIER
                       TextField(
-
                         controller: identifierController,
 
                         decoration: InputDecoration(
@@ -300,9 +296,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       /// PASSWORD
                       TextField(
-
                         controller: passwordController,
-
                         obscureText: obscurePassword,
 
                         decoration: InputDecoration(
@@ -315,7 +309,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
 
                           suffixIcon: IconButton(
-
                             icon: Icon(
                               obscurePassword
                                   ? Icons.visibility_off
@@ -323,7 +316,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
 
                             onPressed: () {
-
                               setState(() {
                                 obscurePassword = !obscurePassword;
                               });
@@ -335,7 +327,6 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 10),
 
                       Align(
-
                         alignment: Alignment.centerRight,
 
                         child: TextButton(
@@ -348,12 +339,10 @@ class _LoginPageState extends State<LoginPage> {
 
                       /// BUTTON MASUK
                       SizedBox(
-
                         width: double.infinity,
                         height: 45,
 
                         child: ElevatedButton(
-
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1C4FA1),
                           ),
@@ -376,43 +365,6 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                         ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      /// BELUM PUNYA AKUN
-                      Row(
-
-                        mainAxisAlignment: MainAxisAlignment.center,
-
-                        children: [
-
-                          const Text("Belum punya akun? "),
-
-                          GestureDetector(
-
-                            onTap: () {
-
-                              Navigator.push(
-                                context,
-
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const RegisterPage(),
-                                ),
-                              );
-                            },
-
-                            child: const Text(
-                              "Daftar di sini",
-
-                              style: TextStyle(
-                                color: Color(0xFF1C4FA1),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
 
                       const SizedBox(height: 10),

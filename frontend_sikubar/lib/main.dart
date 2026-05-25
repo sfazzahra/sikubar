@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 // ================= AUTH =================
 import 'pages/loginpage.dart';
-import 'pages/daftarpage.dart';
 
 // ================= WARGA =================
 import 'pages/warga/beranda.dart';
@@ -37,17 +36,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SiKubar',
 
-      ///UNTUK TEST ROLE
+      /// UNTUK TEST ROLE
       initialRoute: '/',
-      // '/warga'
-      // '/petugas'
-      // '/camat'
-      // '/kasi' // 👉 kalau mau test KASI
 
       routes: {
         /// ================= AUTH =================
         '/': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(),
 
         /// ================= WARGA =================
         '/warga': (context) => const BerandaPage(),
@@ -67,9 +61,9 @@ class MyApp extends StatelessWidget {
         /// ================= KASI =================
         '/kasi': (context) => const MainPageKasi(),
 
-        // ================= KASI =================
+        /// ================= ADMIN =================
         '/admin': (context) => const AdminPage(),
-      }
+      },
     );
   }
 }
