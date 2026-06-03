@@ -8,6 +8,12 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Warga\PengaduanController;
 use App\Http\Controllers\Warga\PengajuanController;
 use App\Http\Controllers\Warga\ProfileController as WargaProfileController;
+use App\Http\Controllers\petugas\VerifikasiPetugasController;
+use App\Http\Controllers\petugas\PengaduanPetugasController;
+use App\Http\Controllers\petugas\MonitoringPetugasController;
+use App\Http\Controllers\petugas\ProfilePetugasController;
+use App\Http\Controllers\Kasi\ProfileKasiController;
+use App\Http\Controllers\Kasi\ValidasiKasiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -100,4 +106,58 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
             'data'    => \App\Models\Seksi::all(),
         ]);
     });
+});
+
+// ============================================================
+// PETUGAS - Butuh token + role:petugas
+// ============================================================
+
+Route::middleware(['auth:sanctum', 'role:petugas'])->prefix('petugas')->group(function () {
+
+    // FR-10, FR-17: Profil & logout
+    // FR-02: Profil warga
+    Route::get('profile', [ProfilePetugasController::class, 'show']);
+    Route::put('profile', [ProfilePetugasController::class, 'update']);
+    Route::post('profile/foto', [ProfilePetugasController::class, 'updateFoto']);
+    Route::put('profile/password', [ProfilePetugasController::class, 'gantiPassword']);
+
+    // FR-11, FR-12, FR-13: Verifikasi pengajuan
+    Route::get('pengajuan', [VerifikasiPetugasController::class, 'index']);
+    Route::get('pengajuan/{id}', [VerifikasiPetugasController::class, 'show']);
+    Route::post('pengajuan/{id}/verifikasi', [VerifikasiPetugasController::class, 'verifikasi']);
+    Route::post('pengajuan/{id}/teruskan', [VerifikasiPetugasController::class, 'teruskan']);
+    Route::post('pengajuan/{id}/upload-surat', [VerifikasiPetugasController::class, 'uploadSurat']);
+
+    // FR-14: Pengaduan
+    Route::get('pengaduan', [PengaduanPetugasController::class, 'index']);
+    Route::get('pengaduan/{id}', [PengaduanPetugasController::class, 'show']);
+    Route::post('pengaduan/{id}/tanggapi', [PengaduanPetugasController::class, 'tanggapi']);
+
+    // FR-15: Monitoring
+    Route::get('monitoring', [MonitoringPetugasController::class, 'index']);
+    Route::get('monitoring/statistik', [MonitoringPetugasController::class, 'statistik']);
+});
+
+// ============================================================
+// KASI - Butuh token + role:kasi
+// ============================================================
+
+Route::middleware(['auth:sanctum', 'role:kasi'])->prefix('kasi')->group(function () {
+
+    // FR-25 Logout
+    Route::post('logout', [ProfileKasiController::class, 'logout']);
+
+    // FR-19 Profil
+    Route::get('profile', [ProfileKasiController::class, 'show']);
+    Route::put('profile', [ProfileKasiController::class, 'update']);
+    Route::put('profile/password', [ProfileKasiController::class, 'gantiPassword']);
+
+    // Beranda / Statistik
+    Route::get('statistik', [ValidasiKasiController::class, 'statistik']);
+
+    // FR-20 s/d FR-24
+    Route::get('pengajuan', [ValidasiKasiController::class, 'index']);
+    Route::get('pengajuan/{id}', [ValidasiKasiController::class, 'show']);
+    Route::post('pengajuan/{id}/setujui', [ValidasiKasiController::class, 'setujui']);
+    Route::post('pengajuan/{id}/tolak', [ValidasiKasiController::class, 'tolak']);
 });

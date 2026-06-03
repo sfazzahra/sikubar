@@ -25,6 +25,7 @@ class Pengajuan extends Model
         'camat_id',
         'tanggal_diproses',
         'tanggal_selesai',
+        'surat_path',
     ];
 
     protected $casts = [

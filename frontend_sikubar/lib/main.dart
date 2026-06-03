@@ -12,7 +12,7 @@ import 'pages/warga/riwayat.dart';
 import 'pages/warga/profilewarga.dart' as wargaProfile;
 
 // ================= PETUGAS =================
-import 'pages/petugas/main_page.dart';
+import 'pages/petugas/main_petugaspage.dart';
 
 // ================= CAMAT =================
 import 'pages/camat/main_pagecamat.dart';
@@ -53,13 +53,13 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const wargaProfile.ProfilePage(),
 
         /// ================= PETUGAS =================
-        '/petugas': (context) => const MainPage(),
+        '/petugas': (context) => const MainPetugasPage(),
 
         /// ================= CAMAT =================
         '/camat': (context) => const MainPageCamat(),
 
         /// ================= KASI =================
-        '/kasi': (context) => const MainPageKasi(),
+        '/kasi': (context) => const MainKasiPage(),
 
         /// ================= ADMIN =================
         '/admin': (context) => const AdminPage(),

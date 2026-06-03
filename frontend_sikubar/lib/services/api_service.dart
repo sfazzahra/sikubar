@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // ← tambah ini
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
@@ -87,7 +88,7 @@ class ApiService {
     return _parse(res);
   }
 
-  /// FR-08 / FR-36: Logout
+  /// FR-08 / FR-36: Logout warga & admin
   Future<void> logout({bool isWarga = true}) async {
     final endpoint = isWarga
         ? '/warga/logout'
@@ -99,7 +100,6 @@ class ApiService {
     );
 
     final prefs = await SharedPreferences.getInstance();
-
     await prefs.remove('auth_token');
     await prefs.remove('user_data');
     await prefs.remove('user_role');
@@ -193,52 +193,41 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> buatPengajuan({
-  required int jenisSuratId,
-  required String tujuan,
-  required List<Map<String, dynamic>> berkas,
-}) async {
+    required int jenisSuratId,
+    required String tujuan,
+    required List<Map<String, dynamic>> berkas,
+  }) async {
+    final token = await _getToken();
 
-  final token = await _getToken();
-
-  final request = http.MultipartRequest(
-    'POST',
-    Uri.parse('$baseUrl/warga/pengajuan'),
-  );
-
-  request.headers.addAll({
-    'Accept': 'application/json',
-    if (token != null)
-      'Authorization': 'Bearer $token',
-  });
-
-  request.fields['jenis_surat_id'] =
-    jenisSuratId.toString();
-
-  request.fields['tujuan'] = tujuan;
-
-  for (int i = 0; i < berkas.length; i++) {
-
-    request.fields['berkas[$i][nama]'] =
-        berkas[i]['nama'] as String;
-
-    request.files.add(
-      http.MultipartFile.fromBytes(
-        'berkas[$i][file]',
-        berkas[i]['bytes'] as Uint8List,
-        filename:
-            berkas[i]['filename'] as String,
-      ),
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/warga/pengajuan'),
     );
+
+    request.headers.addAll({
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    });
+
+    request.fields['jenis_surat_id'] = jenisSuratId.toString();
+    request.fields['tujuan'] = tujuan;
+
+    for (int i = 0; i < berkas.length; i++) {
+      request.fields['berkas[$i][nama]'] = berkas[i]['nama'] as String;
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'berkas[$i][file]',
+          berkas[i]['bytes'] as Uint8List,
+          filename: berkas[i]['filename'] as String,
+        ),
+      );
+    }
+
+    final streamed = await request.send();
+    final res = await http.Response.fromStream(streamed);
+
+    return _parse(res);
   }
-
-  final streamed = await request.send();
-
-  final res = await http.Response.fromStream(
-    streamed,
-  );
-
-  return _parse(res);
-}
 
   Future<Map<String, dynamic>> replaceBerkas({
     required int pengajuanId,
@@ -299,10 +288,7 @@ class ApiService {
     String? buktiNama,
   }) async {
     if (buktiBytes == null) {
-      return kirimPengaduan(
-        judul: judul,
-        isi: isi,
-      );
+      return kirimPengaduan(judul: judul, isi: isi);
     }
 
     final token = await _getToken();
@@ -341,9 +327,7 @@ class ApiService {
   }) async {
     final res = await http.get(
       Uri.parse('$baseUrl/warga/pengaduan').replace(
-        queryParameters: {
-          'page': page.toString(),
-        },
+        queryParameters: {'page': page.toString()},
       ),
       headers: await _headers(),
     );
@@ -364,14 +348,12 @@ class ApiService {
     final query = {
       'page': page.toString(),
       if (role != null) 'role': role,
-      if (seksiId != null)
-        'seksi_id': seksiId.toString(),
+      if (seksiId != null) 'seksi_id': seksiId.toString(),
       if (search != null) 'search': search,
     };
 
     final res = await http.get(
-      Uri.parse('$baseUrl/admin/users')
-          .replace(queryParameters: query),
+      Uri.parse('$baseUrl/admin/users').replace(queryParameters: query),
       headers: await _headers(),
     );
 
@@ -422,13 +404,11 @@ class ApiService {
   }) async {
     final query = {
       'page': page.toString(),
-      if (isActive != null)
-        'is_active': isActive.toString(),
+      if (isActive != null) 'is_active': isActive.toString(),
     };
 
     final res = await http.get(
-      Uri.parse('$baseUrl/admin/jenis-surat')
-          .replace(queryParameters: query),
+      Uri.parse('$baseUrl/admin/jenis-surat').replace(queryParameters: query),
       headers: await _headers(),
     );
 
@@ -460,9 +440,7 @@ class ApiService {
     return _parse(res);
   }
 
-  Future<Map<String, dynamic>> deleteJenisSurat(
-    int id,
-  ) async {
+  Future<Map<String, dynamic>> deleteJenisSurat(int id) async {
     final res = await http.delete(
       Uri.parse('$baseUrl/admin/jenis-surat/$id'),
       headers: await _headers(),
@@ -471,13 +449,9 @@ class ApiService {
     return _parse(res);
   }
 
-  Future<Map<String, dynamic>> toggleAktifJenisSurat(
-    int id,
-  ) async {
+  Future<Map<String, dynamic>> toggleAktifJenisSurat(int id) async {
     final res = await http.patch(
-      Uri.parse(
-        '$baseUrl/admin/jenis-surat/$id/toggle-active',
-      ),
+      Uri.parse('$baseUrl/admin/jenis-surat/$id/toggle-active'),
       headers: await _headers(),
     );
 
@@ -535,8 +509,374 @@ class ApiService {
 
     return _parse(res);
   }
+
+   // =========================================================================
+  // PETUGAS — Profil (FR-10, FR-17)
+  // =========================================================================
+ 
+  Future<Map<String, dynamic>> getProfilPetugas() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/petugas/profile'),
+      headers: await _headers(),
+    );
+ 
+    return _parse(res);
+  }
+ 
+  Future<Map<String, dynamic>> updateProfilPetugas(
+    Map<String, dynamic> data,
+  ) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/petugas/profile'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    );
+ 
+    return _parse(res);
+  }
+ 
+  Future<Map<String, dynamic>> updatePasswordPetugas(
+    String passwordLama,
+    String passwordBaru,
+    String konfirmasi,
+  ) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/petugas/profile/password'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'password_lama': passwordLama,
+        'password_baru': passwordBaru,
+        'password_baru_confirmation': konfirmasi,
+      }),
+    );
+ 
+    return _parse(res);
+  }
+ 
+  /// Alias — konsisten dengan pola updateProfilWargaPassword
+  Future<Map<String, dynamic>> updateProfilPetugasPassword(
+    String passwordLama,
+    String passwordBaru,
+    String konfirmasi,
+  ) =>
+      updatePasswordPetugas(passwordLama, passwordBaru, konfirmasi);
+ 
+  Future<void> logoutPetugas() async {
+    await http.post(
+      Uri.parse('$baseUrl/petugas/logout'),
+      headers: await _headers(),
+    );
+ 
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_data');
+    await prefs.remove('user_role');
+  }
+
+  // =========================================================================
+  // PETUGAS — Pengajuan (FR-11, FR-12, FR-13)
+  // =========================================================================
+
+  Future<Map<String, dynamic>> getPengajuanPetugas({
+    String? status,
+    String? search,
+    int page = 1,
+  }) async {
+    final query = {
+      'page': page.toString(),
+      if (status != null) 'status': status,
+      if (search != null) 'search': search,
+    };
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/petugas/pengajuan').replace(queryParameters: query),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> getDetailPengajuanPetugas(int id) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/petugas/pengajuan/$id'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> verifikasiPengajuan(
+    int id, {
+    required String action, // 'verifikasi' atau 'tolak'
+    String? catatan,
+  }) async {
+    final res = await http.post(
+  Uri.parse('$baseUrl/petugas/pengajuan/$id/verifikasi'),
+  headers: await _headers(),
+  body: jsonEncode({
+    'action': action,
+    if (catatan != null) 'catatan': catatan,
+  }),
+);
+
+print("STATUS: ${res.statusCode}");
+print("BODY: ${res.body}");
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> teruskanPengajuan(
+    int id, {
+    String? catatan,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/petugas/pengajuan/$id/teruskan'),
+      headers: await _headers(),
+      body: jsonEncode({
+        if (catatan != null) 'catatan': catatan,
+      }),
+    );
+
+    return _parse(res);
+  }
+
+  // =========================================================================
+  // PETUGAS — Upload Surat (FR-16)
+  // =========================================================================
+ 
+  Future<Map<String, dynamic>> uploadSurat(
+  int pengajuanId,
+  PlatformFile file,
+) async {
+  final token = await _getToken();
+
+  final request = http.MultipartRequest(
+    'POST',
+    Uri.parse('$baseUrl/petugas/pengajuan/$pengajuanId/upload-surat'),
+  );
+
+  request.headers.addAll({
+    'Accept': 'application/json',
+    if (token != null) 'Authorization': 'Bearer $token',
+  });
+
+  // ✅ Web hanya support bytes, mobile bisa bytes atau path
+  if (file.bytes != null) {
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'surat',
+        file.bytes!,
+        filename: file.name,
+      ),
+    );
+  } else if (file.path != null && !kIsWeb) {  // ← guard kIsWeb
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'surat',
+        file.path!,
+        filename: file.name,
+      ),
+    );
+  } else {
+    throw ApiException('File tidak dapat dibaca', 400);
+  }
+
+  final streamed = await request.send();
+  final res = await http.Response.fromStream(streamed);
+
+  print('STATUS: ${res.statusCode}');
+  print('BODY: ${res.body}');
+
+  return _parse(res);
 }
 
+  // =========================================================================
+  // PETUGAS — Pengaduan (FR-14)
+  // =========================================================================
+
+  Future<Map<String, dynamic>> getPengaduanPetugas({
+    String? status,
+    int page = 1,
+  }) async {
+    final query = {
+      'page': page.toString(),
+      if (status != null) 'status': status,
+    };
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/petugas/pengaduan').replace(queryParameters: query),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> getDetailPengaduanPetugas(int id) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/petugas/pengaduan/$id'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> tanggapiPengaduan(
+    int id,
+    String balasan,
+  ) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/petugas/pengaduan/$id/tanggapi'),
+      headers: await _headers(),
+      body: jsonEncode({'balasan': balasan}),
+    );
+
+    return _parse(res);
+  }
+
+  // =========================================================================
+  // PETUGAS — Monitoring (FR-15)
+  // =========================================================================
+
+  Future<Map<String, dynamic>> getMonitoringPetugas({
+    String? status,
+    String? search,
+    String? tanggalMulai,
+    String? tanggalAkhir,
+    int page = 1,
+  }) async {
+    final query = {
+      'page': page.toString(),
+      if (status != null) 'status': status,
+      if (search != null) 'search': search,
+      if (tanggalMulai != null) 'tanggal_mulai': tanggalMulai,
+      if (tanggalAkhir != null) 'tanggal_akhir': tanggalAkhir,
+    };
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/petugas/monitoring').replace(queryParameters: query),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> getStatistikPetugas() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/petugas/monitoring/statistik'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+    // =========================================================================
+  // KASI — PROFILE
+  // =========================================================================
+  Future<Map<String, dynamic>> getProfilKasi() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/kasi/profile'),
+      headers: await _headers(),
+    );
+ 
+    return _parse(res);
+  }
+ 
+  Future<Map<String, dynamic>> updateProfilKasi(
+    Map<String, dynamic> data,
+  ) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/kasi/profile'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    );
+ 
+    return _parse(res);
+  }
+ 
+  Future<Map<String, dynamic>> updatePasswordKasi(
+    String passwordLama,
+    String passwordBaru,
+    String konfirmasi,
+  ) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/kasi/profile/password'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'password_lama': passwordLama,
+        'password_baru': passwordBaru,
+        'password_baru_confirmation': konfirmasi,
+      }),
+    );
+ 
+    return _parse(res);
+  }
+ 
+  /// Alias — konsisten dengan pola updateProfilWargaPassword
+  Future<Map<String, dynamic>> updateProfilKasiPassword(
+    String passwordLama,
+    String passwordBaru,
+    String konfirmasi,
+  ) =>
+      updatePasswordKasi(passwordLama, passwordBaru, konfirmasi);
+ 
+  Future<void> logoutKasi() async {
+    await http.post(
+      Uri.parse('$baseUrl/kasi/logout'),
+      headers: await _headers(),
+    );
+ 
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_data');
+    await prefs.remove('user_role');
+  }
+
+
+  // =========================================================================
+  // KASI — VALIDASI
+  // =========================================================================
+
+  Future<Map<String, dynamic>> getPengajuanKasi() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/kasi/pengajuan'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> getDetailPengajuanKasi(int id) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/kasi/pengajuan/$id'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> approvePengajuanKasi(int id) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/kasi/pengajuan/$id/setujui'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> tolakPengajuanKasi(
+    int id,
+    String alasan,
+  ) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/kasi/pengajuan/$id/tolak'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'alasan_penolakan': alasan,
+      }),
+    );
+
+    return _parse(res);
+  }
+}
 // ─── Custom exception ────────────────────────────────────────────────────────
 class ApiException implements Exception {
   final String message;

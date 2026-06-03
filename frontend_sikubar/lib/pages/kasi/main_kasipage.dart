@@ -1,44 +1,41 @@
 import 'package:flutter/material.dart';
 
-import 'validasi_page.dart';
-import 'notifikasi_kasi.dart';
+import '../../widgets/bottom_menukasi.dart';
+import 'berandakasi.dart';
+import 'validasikasi.dart';
+import 'profilekasi.dart';
 
-class MainPageKasi extends StatefulWidget {
-  const MainPageKasi({super.key});
+class MainKasiPage extends StatefulWidget {
+  const MainKasiPage({super.key});
 
   @override
-  State<MainPageKasi> createState() => _MainPageKasiState();
+  State<MainKasiPage> createState() => _MainKasiPageState();
 }
 
-class _MainPageKasiState extends State<MainPageKasi> {
-  int currentIndex = 0;
+class _MainKasiPageState extends State<MainKasiPage> {
+  int _currentIndex = 0;
 
-  final List<Widget> pages = const [
-    ValidasiPage(),
-    NotifikasiKasiPage(),
+  final List<Widget> _pages = const [
+    BerandaKasiPage(),
+    ValidasiKasiPage(),
+    ProfileKasiPage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
+
+      bottomNavigationBar: BottomMenuKasi(
+        currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() => currentIndex = index);
+          setState(() {
+            _currentIndex = index;
+          });
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.verified),
-            label: "Validasi",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notifikasi",
-          ),
-        ],
       ),
     );
   }
