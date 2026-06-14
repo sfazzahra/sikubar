@@ -14,92 +14,79 @@ use App\Http\Controllers\petugas\MonitoringPetugasController;
 use App\Http\Controllers\petugas\ProfilePetugasController;
 use App\Http\Controllers\Kasi\ProfileKasiController;
 use App\Http\Controllers\Kasi\ValidasiKasiController;
+use App\Http\Controllers\Camat\CamatController;
+use App\Http\Controllers\Camat\ProfileCamatController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes - SiKubar
-|--------------------------------------------------------------------------
-| Prefix: /api
-|
-| Auth:
-|   - Warga   : POST /warga/login  (NIK + password)
-|   - Staff   : POST /staff/login  (email + password)
-|
-*/
-
 // ============================================================
-// AUTH - Tidak perlu token
+// AUTH — Tanpa token
 // ============================================================
-
-// Warga: login dengan NIK
 Route::prefix('warga')->group(function () {
     Route::post('login', [WargaAuthController::class, 'login']);
 });
 
-// Staff (admin, petugas, kasi, camat): login dengan email
 Route::prefix('staff')->group(function () {
     Route::post('login', [StaffAuthController::class, 'login']);
 });
 
 // ============================================================
-// WARGA - Butuh token + role:warga
+// WARGA
 // ============================================================
-
 Route::middleware(['auth:sanctum', 'role:warga'])->prefix('warga')->group(function () {
 
-    // FR-08: Logout
     Route::post('logout', [WargaAuthController::class, 'logout']);
+    Route::get('me',      [WargaAuthController::class, 'me']);
 
-    // Info diri
-    Route::get('me', [WargaAuthController::class, 'me']);
+    // Profil
+    Route::get ('profile',          [WargaProfileController::class, 'show']);
+    Route::put ('profile',          [WargaProfileController::class, 'update']);
+    Route::post('profile/foto',     [WargaProfileController::class, 'updateFoto']);
+    Route::put ('profile/password', [WargaProfileController::class, 'updatePassword']);
 
-    // FR-02: Profil warga
-    Route::get('profile', [WargaProfileController::class, 'show']);
-    Route::put('profile', [WargaProfileController::class, 'update']);
-    Route::post('profile/foto', [WargaProfileController::class, 'updateFoto']);
-    Route::put('profile/password', [WargaProfileController::class, 'updatePassword']);
+    // Jenis surat aktif (persyaratan + tujuan)
+    Route::get('jenis-surat', [PengajuanController::class, 'jenisSuratAktif']);
 
-    // FR-03 + FR-04: Pengajuan surat
-    Route::get('jenis-surat', [PengajuanController::class, 'jenisSuratAktif']);        // daftar jenis surat aktif
-    Route::get('pengajuan', [PengajuanController::class, 'index']);                    // FR-07: riwayat
-    Route::post('pengajuan', [PengajuanController::class, 'store']);                   // FR-03 + FR-04: buat baru
-    Route::get('pengajuan/{id}', [PengajuanController::class, 'show']);                // detail
-    Route::post('pengajuan/{id}/berkas', [PengajuanController::class, 'updateBerkas']);// FR-05: ganti semua berkas
-    Route::post('pengajuan/{id}/berkas/{berkasId}', [PengajuanController::class, 'replaceBerkas']); // FR-05: ganti 1 berkas
+    // Pengajuan
+    Route::get ('pengajuan',      [PengajuanController::class, 'index']);
+    Route::post('pengajuan',      [PengajuanController::class, 'store']);
+    Route::get ('pengajuan/{id}', [PengajuanController::class, 'show']);
 
-    // FR-06: Pengaduan/keluhan
-    Route::get('pengaduan', [PengaduanController::class, 'index']);
-    Route::post('pengaduan', [PengaduanController::class, 'store']);
-    Route::get('pengaduan/{id}', [PengaduanController::class, 'show']);
+    // Berkas — URUTAN PENTING: GET dulu sebelum POST agar tidak bentrok
+    Route::get ('pengajuan/{pengajuanId}/berkas/{berkasId}',
+        [PengajuanController::class, 'showBerkas']);    // ← BARU: ambil file_url
+
+    Route::post('pengajuan/{id}/berkas',
+        [PengajuanController::class, 'updateBerkas']);  // ganti semua berkas
+
+    Route::post('pengajuan/{pengajuanId}/berkas/{berkasId}',
+        [PengajuanController::class, 'replaceBerkas']); // ganti 1 berkas
+
+    // Pengaduan
+    Route::get ('pengaduan',      [PengaduanController::class, 'index']);
+    Route::post('pengaduan',      [PengaduanController::class, 'store']);
+    Route::get ('pengaduan/{id}', [PengaduanController::class, 'show']);
 });
 
 // ============================================================
-// ADMIN - Butuh token + role:admin
+// ADMIN
 // ============================================================
-
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
 
-    // FR-36: Logout
     Route::post('logout', [StaffAuthController::class, 'logout']);
+    Route::get ('me',     [StaffAuthController::class, 'me']);
 
-    // Info diri
-    Route::get('me', [StaffAuthController::class, 'me']);
+    Route::get ('profile',          [AdminProfileController::class, 'show']);
+    Route::put ('profile',          [AdminProfileController::class, 'update']);
+    Route::post('profile/foto',     [AdminProfileController::class, 'updateFoto']);
+    Route::put ('profile/password', [AdminProfileController::class, 'updatePassword']);
 
-    // FR-33: Profil admin
-    Route::get('profile', [AdminProfileController::class, 'show']);
-    Route::put('profile', [AdminProfileController::class, 'update']);
-    Route::post('profile/foto', [AdminProfileController::class, 'updateFoto']);
-    Route::put('profile/password', [AdminProfileController::class, 'updatePassword']);
-
-    // FR-34: Manajemen pengguna (semua role)
     Route::apiResource('users', UserController::class);
 
-    // FR-35: Manajemen jenis surat
     Route::apiResource('jenis-surat', JenisSuratController::class);
-    Route::patch('jenis-surat/{id}/toggle-active', [JenisSuratController::class, 'toggleActive']);
+    Route::patch('jenis-surat/{id}/toggle-active',
+        [JenisSuratController::class, 'toggleActive']);
 
-    // Data referensi
     Route::get('seksi', function () {
         return response()->json([
             'success' => true,
@@ -109,55 +96,67 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 });
 
 // ============================================================
-// PETUGAS - Butuh token + role:petugas
+// PETUGAS
 // ============================================================
-
 Route::middleware(['auth:sanctum', 'role:petugas'])->prefix('petugas')->group(function () {
 
-    // FR-10, FR-17: Profil & logout
-    // FR-02: Profil warga
-    Route::get('profile', [ProfilePetugasController::class, 'show']);
-    Route::put('profile', [ProfilePetugasController::class, 'update']);
-    Route::post('profile/foto', [ProfilePetugasController::class, 'updateFoto']);
-    Route::put('profile/password', [ProfilePetugasController::class, 'gantiPassword']);
+    Route::get ('profile',          [ProfilePetugasController::class, 'show']);
+    Route::put ('profile',          [ProfilePetugasController::class, 'update']);
+    Route::post('profile/foto',     [ProfilePetugasController::class, 'updateFoto']);
+    Route::put ('profile/password', [ProfilePetugasController::class, 'gantiPassword']);
 
-    // FR-11, FR-12, FR-13: Verifikasi pengajuan
-    Route::get('pengajuan', [VerifikasiPetugasController::class, 'index']);
-    Route::get('pengajuan/{id}', [VerifikasiPetugasController::class, 'show']);
-    Route::post('pengajuan/{id}/verifikasi', [VerifikasiPetugasController::class, 'verifikasi']);
-    Route::post('pengajuan/{id}/teruskan', [VerifikasiPetugasController::class, 'teruskan']);
-    Route::post('pengajuan/{id}/upload-surat', [VerifikasiPetugasController::class, 'uploadSurat']);
+    Route::get ('pengajuan',                          [VerifikasiPetugasController::class, 'index']);
+    Route::get ('pengajuan/{id}',                     [VerifikasiPetugasController::class, 'show']);
+    Route::post('pengajuan/{id}/verifikasi',          [VerifikasiPetugasController::class, 'verifikasi']);
+    Route::post('pengajuan/{id}/teruskan',            [VerifikasiPetugasController::class, 'teruskan']);
+    Route::post('pengajuan/{id}/upload-surat',        [VerifikasiPetugasController::class, 'uploadSurat']);
 
-    // FR-14: Pengaduan
-    Route::get('pengaduan', [PengaduanPetugasController::class, 'index']);
-    Route::get('pengaduan/{id}', [PengaduanPetugasController::class, 'show']);
-    Route::post('pengaduan/{id}/tanggapi', [PengaduanPetugasController::class, 'tanggapi']);
+    Route::get ('pengaduan',                          [PengaduanPetugasController::class, 'index']);
+    Route::get ('pengaduan/{id}',                     [PengaduanPetugasController::class, 'show']);
+    Route::post('pengaduan/{id}/tanggapi',            [PengaduanPetugasController::class, 'tanggapi']);
 
-    // FR-15: Monitoring
-    Route::get('monitoring', [MonitoringPetugasController::class, 'index']);
-    Route::get('monitoring/statistik', [MonitoringPetugasController::class, 'statistik']);
+    Route::get ('monitoring',                         [MonitoringPetugasController::class, 'index']);
+    Route::get ('monitoring/statistik',               [MonitoringPetugasController::class, 'statistik']);
 });
 
 // ============================================================
-// KASI - Butuh token + role:kasi
+// KASI
 // ============================================================
-
 Route::middleware(['auth:sanctum', 'role:kasi'])->prefix('kasi')->group(function () {
 
-    // FR-25 Logout
-    Route::post('logout', [ProfileKasiController::class, 'logout']);
+    Route::post('logout',           [ProfileKasiController::class, 'logout']);
+    Route::get ('profile',          [ProfileKasiController::class, 'show']);
+    Route::put ('profile',          [ProfileKasiController::class, 'update']);
+    Route::put ('profile/password', [ProfileKasiController::class, 'gantiPassword']);
 
-    // FR-19 Profil
-    Route::get('profile', [ProfileKasiController::class, 'show']);
-    Route::put('profile', [ProfileKasiController::class, 'update']);
-    Route::put('profile/password', [ProfileKasiController::class, 'gantiPassword']);
-
-    // Beranda / Statistik
-    Route::get('statistik', [ValidasiKasiController::class, 'statistik']);
-
-    // FR-20 s/d FR-24
-    Route::get('pengajuan', [ValidasiKasiController::class, 'index']);
-    Route::get('pengajuan/{id}', [ValidasiKasiController::class, 'show']);
+    Route::get ('statistik',              [ValidasiKasiController::class, 'statistik']);
+    Route::get ('pengajuan',              [ValidasiKasiController::class, 'index']);
+    Route::get ('pengajuan/{id}',         [ValidasiKasiController::class, 'show']);
     Route::post('pengajuan/{id}/setujui', [ValidasiKasiController::class, 'setujui']);
-    Route::post('pengajuan/{id}/tolak', [ValidasiKasiController::class, 'tolak']);
+    Route::post('pengajuan/{id}/tolak',   [ValidasiKasiController::class, 'tolak']);
+});
+
+// ============================================================
+// CAMAT
+// ============================================================
+Route::middleware(['auth:sanctum', 'role:camat'])->prefix('camat')->group(function () {
+    Route::get('profile',              [ProfileCamatController::class, 'show']);
+    Route::put('profile',              [ProfileCamatController::class, 'update']);
+    Route::post('profile/foto',        [ProfileCamatController::class, 'updateFoto']);
+    Route::put('profile/password',     [ProfileCamatController::class, 'updatePassword']);
+
+    Route::get('dashboard',          [CamatController::class, 'dashboard']);
+    Route::get('pengajuan',          [CamatController::class, 'indexPengajuan']);
+    Route::get('pengajuan/{id}',     [CamatController::class, 'showPengajuan']);
+    Route::get('pengaduan',          [CamatController::class, 'indexPengaduan']);
+    Route::get('pengaduan/{id}',     [CamatController::class, 'showPengaduan']);
+});
+
+
+    // ─── NOTIFIKASI ──────────────────────────────────────────────────────
+ Route::middleware('auth:sanctum')->prefix('notifikasi')->group(function () {
+    Route::get('/',             [NotificationController::class, 'index']);
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::put('/read-all',     [NotificationController::class, 'markAllAsRead']);
+    Route::put('/{id}/read',    [NotificationController::class, 'markAsRead']);
 });

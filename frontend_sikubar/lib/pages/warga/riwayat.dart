@@ -12,6 +12,36 @@ class RiwayatPage extends StatefulWidget {
 class _RiwayatPageState extends State<RiwayatPage> {
   final _api = ApiService();
 
+String formatTanggal(String? datetime) {
+  if (datetime == null || datetime.isEmpty) return '-';
+
+  try {
+    final dt = DateTime.parse(datetime).toLocal();
+
+    const bulan = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
+    ];
+
+    return '${dt.day} ${bulan[dt.month]} ${dt.year}, '
+        '${dt.hour.toString().padLeft(2, '0')}:'
+        '${dt.minute.toString().padLeft(2, '0')}';
+  } catch (_) {
+    return datetime;
+  }
+}
+
   List<Map<String, dynamic>> riwayat  = [];
   bool isLoading = false;
 
@@ -125,61 +155,184 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 
   Widget _riwayatCard(Map<String, dynamic> data) {
-    final jenis  = data['jenis_surat']?['nama'] ?? '-';
-    final nomor  = data['nomor_pengajuan'] ?? '-';
-    final status = data['status'] ?? '-';
-    final alasan = data['alasan_penolakan'];
-    final selesai = data['tanggal_selesai'];
-    final color  = _statusColor(status);
+  final jenis = data['jenis_surat']?['nama'] ?? '-';
+  final nomor = data['nomor_pengajuan'] ?? '-';
+  final status = data['status'] ?? '-';
+  final alasan = data['alasan_penolakan'];
+  final selesai = data['tanggal_selesai'];
+  final color = _statusColor(status);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(jenis,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 6),
-        Row(children: [
-          const Icon(Icons.tag, size: 14, color: Colors.grey),
-          const SizedBox(width: 4),
-          Text(nomor, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        ]),
-        if (selesai != null) ...[
-          const SizedBox(height: 4),
-          Row(children: [
-            const Icon(Icons.calendar_today, size: 13, color: Colors.grey),
-            const SizedBox(width: 4),
-            Text(selesai.toString().substring(0, 10),
-                style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          ]),
-        ],
-        const SizedBox(height: 10),
-        Row(children: [
-          const Text('Status: '),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
+  return Container(
+    margin: const EdgeInsets.only(bottom: 14),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        /// HEADER
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                jenis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
                 color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8)),
-            child: Text(status,
-                style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-          ),
-        ]),
-        if (alasan != null) ...[
-          const SizedBox(height: 8),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                status.toUpperCase(),
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        /// NOMOR PENGAJUAN
+        Row(
+          children: [
+            const Icon(
+              Icons.confirmation_number_outlined,
+              size: 15,
+              color: Colors.grey,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                nomor,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        /// TANGGAL
+        if (selesai != null)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8)),
-            child: Text('Alasan: $alasan',
-                style: const TextStyle(color: Colors.red, fontSize: 12)),
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.access_time,
+                  color: Color(0xFF2F80ED),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        status == 'ditolak'
+                            ? 'Tanggal Ditolak'
+                            : 'Tanggal Selesai',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formatTanggal(selesai),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1C4FA1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        /// ALASAN PENOLAKAN
+        if (alasan != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.red,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Alasan Penolakan',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        alasan,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ]),
-    );
-  }
+      ],
+    ),
+  );
+}
 }

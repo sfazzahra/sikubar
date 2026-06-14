@@ -7,6 +7,8 @@ use App\Models\Pengaduan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Providers\NotificationService;
+use App\Models\User;
 
 class PengaduanController extends Controller
 {
@@ -46,6 +48,17 @@ class PengaduanController extends Controller
             'bukti_path'     => $buktiPath,
             'bukti_original' => $buktiOriginal,
         ]);
+
+ $petugasIds = User::where('role', 'petugas')->pluck('id');
+
+foreach ($petugasIds as $petugasId) {
+    NotificationService::pengaduanBaru(
+        $petugasId,
+        $request->user()->name,
+        $pengaduan->judul,
+        $pengaduan->id
+    );
+}
 
         return response()->json([
             'success' => true,

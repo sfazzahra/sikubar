@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
+import '../../notifications/notification_service.dart';
+import '../../notifications/notification_badge.dart';
+import '../../notifications/notifikasi_page.dart';
 
 class VerifikasiPetugasPage extends StatefulWidget {
   const VerifikasiPetugasPage({super.key});
@@ -20,11 +23,15 @@ class _VerifikasiPetugasPageState extends State<VerifikasiPetugasPage> {
   int currentPage = 1;
   int lastPage = 1;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPengajuan();
-  }
+@override
+void initState() {
+  super.initState();
+  _loadPengajuan();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationService.instance.fetchNotifikasi();
+  });
+}
 
   Future<void> _loadPengajuan({bool reset = false}) async {
     if (reset) {
@@ -88,6 +95,9 @@ class _VerifikasiPetugasPageState extends State<VerifikasiPetugasPage> {
         catatan: catatan.isNotEmpty ? catatan : null,
       );
       await _loadPengajuan(reset: true);
+      
+      NotificationService.instance.refreshBadge();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -117,6 +127,9 @@ class _VerifikasiPetugasPageState extends State<VerifikasiPetugasPage> {
         catatan: catatan.isNotEmpty ? catatan : null,
       );
       await _loadPengajuan(reset: true);
+
+      NotificationService.instance.refreshBadge();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -336,6 +349,11 @@ class _VerifikasiPetugasPageState extends State<VerifikasiPetugasPage> {
                               setSheetState(() => isUploading = true);
                               try {
                                 await _api.uploadSurat(item['id'], selectedFile!);
+
+                                  await _loadPengajuan(reset: true);
+
+                                  NotificationService.instance.refreshBadge();
+
                                 if (mounted) {
                                   Navigator.pop(ctx);
                                   _loadPengajuan(reset: true);
@@ -388,12 +406,24 @@ class _VerifikasiPetugasPageState extends State<VerifikasiPetugasPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
-        title: const Text("Verifikasi Berkas"),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF2F80ED),
-        foregroundColor: Colors.white,
-        elevation: 0,
+  title: const Text("Verifikasi Berkas"),
+  centerTitle: true,
+  backgroundColor: const Color(0xFF2F80ED),
+  foregroundColor: Colors.white,
+  elevation: 0,
+  actions: [
+    NotificationBadgeIcon(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotifikasiPage(),
+        ),
+      ).then(
+        (_) => NotificationService.instance.refreshBadge(),
       ),
+    ),
+  ],
+),
       body: Column(
         children: [
           Container(

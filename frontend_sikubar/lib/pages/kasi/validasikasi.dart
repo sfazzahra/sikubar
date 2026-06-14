@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
+import '../../notifications/notification_service.dart';
+import '../../notifications/notification_badge.dart';
+import '../../notifications/notifikasi_page.dart';
 
 class ValidasiKasiPage extends StatefulWidget {
   const ValidasiKasiPage({super.key});
@@ -19,16 +22,15 @@ class _ValidasiKasiPageState extends State<ValidasiKasiPage> {
   List<Map<String, dynamic>> allPengajuan = [];
   List<Map<String, dynamic>> pengajuanList = [];
 
-  // ─── Alur status yang masuk ke Kasi:
-  // menunggu_kasi → (kasi setujui) → disetujui_kasi
-  //              → (kasi tolak)    → ditolak
-  // disetujui_kasi → (petugas upload surat) → selesai
+ @override
+void initState() {
+  super.initState();
+  _loadPengajuan();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPengajuan();
-  }
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationService.instance.fetchNotifikasi();
+  });
+}
 
   Future<void> _loadPengajuan() async {
     try {
@@ -75,6 +77,9 @@ class _ValidasiKasiPageState extends State<ValidasiKasiPage> {
       setState(() => isProcessing = true);
       await _api.approvePengajuanKasi(item["id"]);
       await _loadPengajuan();
+
+      NotificationService.instance.refreshBadge();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -100,6 +105,9 @@ class _ValidasiKasiPageState extends State<ValidasiKasiPage> {
       setState(() => isProcessing = true);
       await _api.tolakPengajuanKasi(item["id"], alasan);
       await _loadPengajuan();
+
+      NotificationService.instance.refreshBadge();
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -224,12 +232,24 @@ class _ValidasiKasiPageState extends State<ValidasiKasiPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: const Color(0xFF2F80ED),
-        foregroundColor: Colors.white,
-        title: const Text("Validasi Pengajuan"),
-        elevation: 0,
+  centerTitle: true,
+  backgroundColor: const Color(0xFF2F80ED),
+  foregroundColor: Colors.white,
+  title: const Text("Validasi Pengajuan"),
+  elevation: 0,
+  actions: [
+    NotificationBadgeIcon(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotifikasiPage(),
+        ),
+      ).then(
+        (_) => NotificationService.instance.refreshBadge(),
       ),
+    ),
+  ],
+),
       body: Column(
         children: [
           // ─── TAB FILTER

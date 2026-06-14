@@ -17,6 +17,8 @@ class BerkasPengajuan extends Model
         'file_size',
     ];
 
+    protected $appends = ['file_url', 'is_pendukung', 'nama_bersih'];
+
     public function pengajuan()
     {
         return $this->belongsTo(Pengajuan::class, 'pengajuan_id');
@@ -25,5 +27,15 @@ class BerkasPengajuan extends Model
     public function getFileUrlAttribute(): string
     {
         return asset('storage/' . $this->file_path);
+    }
+
+    public function getIsPendukungAttribute(): bool
+    {
+        return str_starts_with($this->nama_berkas ?? '', '[Pendukung]');
+    }
+
+    public function getNamaBersihAttribute(): string
+    {
+        return str_replace('[Pendukung] ', '', $this->nama_berkas ?? '');
     }
 }

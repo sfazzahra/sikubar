@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../notifications/notification_service.dart';
+import '../../notifications/notification_badge.dart';
+import '../../notifications/notifikasi_page.dart';
 
 class PengaduanPetugasPage extends StatefulWidget {
   const PengaduanPetugasPage({super.key});
@@ -16,11 +19,15 @@ class _PengaduanPetugasPageState extends State<PengaduanPetugasPage> {
   String selectedFilter = "Semua";
   List dataPengaduan = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPengaduan();
-  }
+@override
+void initState() {
+  super.initState();
+  _loadPengaduan();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationService.instance.fetchNotifikasi();
+  });
+}
 
   Future<void> _loadPengaduan() async {
     setState(() => isLoading = true);
@@ -55,11 +62,23 @@ class _PengaduanPetugasPageState extends State<PengaduanPetugasPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
-        title: const Text("Pengaduan Petugas"),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF2F80ED),
-        foregroundColor: Colors.white,
+  title: const Text("Pengaduan Petugas"),
+  centerTitle: true,
+  backgroundColor: const Color(0xFF2F80ED),
+  foregroundColor: Colors.white,
+  actions: [
+    NotificationBadgeIcon(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotifikasiPage(),
+        ),
+      ).then(
+        (_) => NotificationService.instance.refreshBadge(),
       ),
+    ),
+  ],
+),
       body: Column(
         children: [
           /// FILTER
@@ -273,6 +292,8 @@ class _PengaduanPetugasPageState extends State<PengaduanPetugasPage> {
 
                       Navigator.pop(context);
                       _loadPengaduan();
+
+                      NotificationService.instance.refreshBadge();
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../services/api_service.dart';
 import '../../widgets/bottom_menuwarga.dart';
+import '../../notifications/notification_service.dart';
+import '../../notifications/notification_badge.dart';
+import '../../notifications/notifikasi_page.dart';
 
 class PengaduanPage extends StatefulWidget {
   const PengaduanPage({super.key});
@@ -34,11 +37,15 @@ class _PengaduanPageState extends State<PengaduanPage> {
     'Lainnya',
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPengaduan();
-  }
+@override
+void initState() {
+  super.initState();
+  _loadPengaduan();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationService.instance.fetchNotifikasi();
+  });
+}
 
   Future<void> _loadPengaduan() async {
     setState(() => isLoading = true);
@@ -86,6 +93,7 @@ class _PengaduanPageState extends State<PengaduanPage> {
   buktiNama: buktiNama,
 );
       _snack('Pengaduan berhasil dikirim.');
+      NotificationService.instance.refreshBadge();
       setState(() {
         kategoriDipilih = null;
         buktiBytes = null;
@@ -154,11 +162,20 @@ class _PengaduanPageState extends State<PengaduanPage> {
             onTap: () => Navigator.pop(context),
             child: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
           )),
-      Positioned(right: 10, top: 10,
-        child: IconButton(
-          icon: const Icon(Icons.notifications, color: Colors.white),
-          onPressed: () => Navigator.pushNamed(context, '/notifikasi'),
-        )),
+      Positioned(
+  right: 10,
+  top: 10,
+  child: NotificationBadgeIcon(
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const NotifikasiPage(),
+      ),
+    ).then(
+      (_) => NotificationService.instance.refreshBadge(),
+    ),
+  ),
+),
       const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.account_balance, color: Colors.white, size: 32),
         SizedBox(height: 4),

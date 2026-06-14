@@ -78,6 +78,11 @@ class User extends Authenticatable
         return $this->hasMany(Pengaduan::class, 'warga_id');
     }
 
+    public function notifications()
+    {
+    return $this->hasMany(Notification::class);
+    }
+
     // ===================== ACCESSORS =====================
 
     public function getFotoUrlAttribute(): ?string

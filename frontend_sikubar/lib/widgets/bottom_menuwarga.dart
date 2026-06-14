@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../pages/warga/beranda.dart';
 import '../pages/warga/pengajuan.dart';
 import '../pages/warga/pengaduan.dart';
-import '../pages/warga/notifikasi.dart';
-import '../pages/warga/riwayat.dart';
 import '../pages/warga/profilewarga.dart';
+import '../pages/warga/riwayat.dart';
 
 /// ================= APP BAR =================
 class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
@@ -18,72 +17,60 @@ class AppBarSiKubar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(100),
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF2F80ED), Color(0xFF56CCF2)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF2F80ED),
+            Color(0xFF56CCF2),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 90,
-            child: Stack(
-              children: [
-
-                /// 🔙 BACK BUTTON
-                if (Navigator.canPop(context))
-                  Positioned(
-                    left: 16,
-                    top: 10,
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.arrow_back,
-                          color: Colors.white, size: 26),
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 90,
+          child: Stack(
+            children: [
+              // 🔙 BACK BUTTON
+              if (Navigator.canPop(context))
+                Positioned(
+                  left: 16,
+                  top: 10,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
+                ),
 
-                /// 🎯 TITLE + ICON
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.account_balance,
-                          color: Colors.white, size: 32),
-                      const SizedBox(height: 4),
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+              // 🎯 TITLE + ICON
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.account_balance,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-
-                /// 🔔 NOTIF (KANAN ATAS)
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: IconButton(
-                    icon: const Icon(Icons.notifications, color: Colors.white),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NotifikasiPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -130,7 +117,9 @@ class BottomMenu extends StatelessWidget {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => page),
+      MaterialPageRoute(
+        builder: (_) => page,
+      ),
     );
   }
 
@@ -146,23 +135,23 @@ class BottomMenu extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: "Beranda",
+          label: 'Beranda',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
-          label: "Profil",
+          label: 'Profil',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.description),
-          label: "Pengajuan",
+          label: 'Pengajuan',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.history),
-          label: "Riwayat",
+          label: 'Riwayat',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.report_problem),
-          label: "Pengaduan",
+          label: 'Pengaduan',
         ),
       ],
     );

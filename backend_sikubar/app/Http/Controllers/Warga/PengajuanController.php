@@ -6,22 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\BerkasPengajuan;
 use App\Models\JenisSurat;
 use App\Models\Pengajuan;
+use App\Models\User;
+use App\Providers\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PengajuanController extends Controller
 {
-    /**
-     * FR-07: Riwayat pengajuan warga
-     */
+    // ── INDEX ─────────────────────────────────────────────────────────────
+
     public function index(Request $request): JsonResponse
     {
         $pengajuan = Pengajuan::with(['jenisSurat.seksi', 'berkas'])
             ->where('warga_id', $request->user()->id)
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->paginate($request->get('per_page', 10));
 
         return response()->json([
@@ -30,9 +32,8 @@ class PengajuanController extends Controller
         ]);
     }
 
-    /**
-     * Detail satu pengajuan warga
-     */
+    // ── SHOW ──────────────────────────────────────────────────────────────
+
     public function show(Request $request, int $id): JsonResponse
     {
         $pengajuan = Pengajuan::with(['jenisSurat.seksi', 'berkas', 'petugas', 'kasi'])
@@ -45,14 +46,38 @@ class PengajuanController extends Controller
         ]);
     }
 
-    /**
-     * FR-03 + FR-04: Buat pengajuan baru beserta upload berkas
-     */
+    // ── SHOW BERKAS ───────────────────────────────────────────────────────
+
+    public function showBerkas(Request $request, int $pengajuanId, int $berkasId): JsonResponse
+    {
+        $pengajuan = Pengajuan::where('warga_id', $request->user()->id)
+            ->findOrFail($pengajuanId);
+
+        $berkas = BerkasPengajuan::where('pengajuan_id', $pengajuan->id)
+            ->findOrFail($berkasId);
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'            => $berkas->id,
+                'nama_berkas'   => $berkas->nama_berkas,
+                'nama_bersih'   => $berkas->nama_bersih,
+                'file_original' => $berkas->file_original,
+                'mime_type'     => $berkas->mime_type,
+                'file_size'     => $berkas->file_size,
+                'file_url'      => $berkas->file_url,
+                'is_pendukung'  => $berkas->is_pendukung,
+            ],
+        ]);
+    }
+
+    // ── STORE ─────────────────────────────────────────────────────────────
+
     public function store(Request $request): JsonResponse
     {
         $request->validate([
             'jenis_surat_id' => 'required|exists:jenis_surat,id',
-            'tujuan'         => 'nullable|string|max:255',   // ← DITAMBAHKAN
+            'tujuan'         => 'nullable|string|max:255',
             'berkas'         => 'required|array|min:1',
             'berkas.*.nama'  => 'required|string|max:255',
             'berkas.*.file'  => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -64,20 +89,21 @@ class PengajuanController extends Controller
         ]);
 
         $jenisSurat = JenisSurat::where('is_active', true)->findOrFail($request->jenis_surat_id);
+        $seksiId    = $jenisSurat->seksi_id;
 
         DB::beginTransaction();
         try {
             $pengajuan = Pengajuan::create([
                 'warga_id'       => $request->user()->id,
                 'jenis_surat_id' => $jenisSurat->id,
-                'tujuan'         => $request->tujuan,   // ← DITAMBAHKAN
+                'tujuan'         => $request->tujuan,
                 'status'         => 'menunggu',
             ]);
 
             foreach ($request->berkas as $item) {
                 /** @var \Illuminate\Http\UploadedFile $file */
                 $file = $item['file'];
-                $path = $file->store("berkas/{$pengajuan->id}", 'public');
+                $path = $this->simpanFile($file, $item['nama'], $pengajuan->id);
 
                 BerkasPengajuan::create([
                     'pengajuan_id'  => $pengajuan->id,
@@ -90,6 +116,20 @@ class PengajuanController extends Controller
             }
 
             DB::commit();
+
+            // Kirim notifikasi ke SEMUA petugas di seksi yang sesuai
+            $petugasIds = User::where('role', 'petugas')
+                ->where('seksi_id', $seksiId)
+                ->pluck('id');
+
+            foreach ($petugasIds as $petugasId) {
+                NotificationService::pengajuanBaru(
+                    petugasId: $petugasId,
+                    namawarga: $request->user()->name,
+                    jenisSurat: $pengajuan->jenisSurat->nama,
+                    pengajuanId: $pengajuan->id,
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -107,14 +147,12 @@ class PengajuanController extends Controller
         }
     }
 
-    /**
-     * FR-05: Perbarui/ganti berkas persyaratan
-     * Hanya bisa jika status masih 'menunggu'
-     */
+    // ── UPDATE BERKAS (ganti semua) ───────────────────────────────────────
+
     public function updateBerkas(Request $request, int $pengajuanId): JsonResponse
     {
         $pengajuan = Pengajuan::where('warga_id', $request->user()->id)
-                              ->findOrFail($pengajuanId);
+            ->findOrFail($pengajuanId);
 
         if ($pengajuan->status !== 'menunggu') {
             return response()->json([
@@ -131,14 +169,16 @@ class PengajuanController extends Controller
 
         DB::beginTransaction();
         try {
+            // Hapus semua berkas lama dari storage
             foreach ($pengajuan->berkas as $berkas) {
                 Storage::disk('public')->delete($berkas->file_path);
             }
             $pengajuan->berkas()->delete();
 
+            // Simpan berkas baru
             foreach ($request->berkas as $item) {
                 $file = $item['file'];
-                $path = $file->store("berkas/{$pengajuan->id}", 'public');
+                $path = $this->simpanFile($file, $item['nama'], $pengajuan->id);
 
                 BerkasPengajuan::create([
                     'pengajuan_id'  => $pengajuan->id,
@@ -163,17 +203,17 @@ class PengajuanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memperbarui berkas.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
 
-    /**
-     * FR-05: Ganti satu berkas saja (tanpa hapus semua)
-     */
+    // ── REPLACE BERKAS (ganti satu) ───────────────────────────────────────
+
     public function replaceBerkas(Request $request, int $pengajuanId, int $berkasId): JsonResponse
     {
         $pengajuan = Pengajuan::where('warga_id', $request->user()->id)
-                              ->findOrFail($pengajuanId);
+            ->findOrFail($pengajuanId);
 
         if ($pengajuan->status !== 'menunggu') {
             return response()->json([
@@ -182,16 +222,17 @@ class PengajuanController extends Controller
             ], 422);
         }
 
-        $berkas = BerkasPengajuan::where('pengajuan_id', $pengajuanId)->findOrFail($berkasId);
+        $berkas = BerkasPengajuan::where('pengajuan_id', $pengajuanId)
+            ->findOrFail($berkasId);
 
         $request->validate([
             'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        Storage::disk('public')->delete($berkas->file_path);
-
         $file = $request->file('file');
-        $path = $file->store("berkas/{$pengajuan->id}", 'public');
+
+        Storage::disk('public')->delete($berkas->file_path);
+        $path = $this->simpanFile($file, $berkas->nama_berkas, $pengajuanId);
 
         $berkas->update([
             'file_path'     => $path,
@@ -207,9 +248,8 @@ class PengajuanController extends Controller
         ]);
     }
 
-    /**
-     * Daftar jenis surat yang aktif (untuk form pengajuan)
-     */
+    // ── JENIS SURAT AKTIF ─────────────────────────────────────────────────
+
     public function jenisSuratAktif(): JsonResponse
     {
         $jenisSurat = JenisSurat::with('seksi')
@@ -221,5 +261,24 @@ class PengajuanController extends Controller
             'success' => true,
             'data'    => $jenisSurat,
         ]);
+    }
+
+    // ── PRIVATE HELPERS ───────────────────────────────────────────────────
+
+    /**
+     * Generate nama file unik dan simpan ke storage public.
+     */
+    private function simpanFile(
+        \Illuminate\Http\UploadedFile $file,
+        string $namaBerkas,
+        int $pengajuanId
+    ): string {
+        $namaFile = Str::slug($namaBerkas)
+            . '_'
+            . time()
+            . '.'
+            . $file->getClientOriginalExtension();
+
+        return $file->storeAs("berkas/{$pengajuanId}", $namaFile, 'public');
     }
 }

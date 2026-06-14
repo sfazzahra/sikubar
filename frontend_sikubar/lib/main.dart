@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+// ================= NOTIFICATION =================
+import 'notifications/notification_service.dart';
+
 // ================= AUTH =================
 import 'pages/loginpage.dart';
 
@@ -7,9 +10,8 @@ import 'pages/loginpage.dart';
 import 'pages/warga/beranda.dart';
 import 'pages/warga/pengajuan.dart';
 import 'pages/warga/pengaduan.dart' as warga;
-import 'pages/warga/notifikasi.dart';
-import 'pages/warga/riwayat.dart';
 import 'pages/warga/profilewarga.dart' as wargaProfile;
+import 'pages/warga/riwayat.dart';
 
 // ================= PETUGAS =================
 import 'pages/petugas/main_petugaspage.dart';
@@ -24,44 +26,52 @@ import 'pages/kasi/main_kasipage.dart';
 import 'pages/admin/admin.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // // Observer lifecycle supaya badge refresh saat app dibuka lagi
+  // WidgetsBinding.instance.addObserver(
+  //   AppLifecycleNotificationObserver(),
+  // );
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SiKubar',
-
-      /// UNTUK TEST ROLE
       initialRoute: '/',
-
       routes: {
-        /// ================= AUTH =================
+        // ================= AUTH =================
         '/': (context) => const LoginPage(),
 
-        /// ================= WARGA =================
+        // ================= WARGA =================
         '/warga': (context) => const BerandaPage(),
         '/beranda': (context) => const BerandaPage(),
         '/pengajuan': (context) => const PengajuanPage(),
         '/pengaduan': (context) => const warga.PengaduanPage(),
-        '/notifikasi': (context) => const NotifikasiPage(),
         '/riwayat': (context) => const RiwayatPage(),
         '/profile': (context) => const wargaProfile.ProfilePage(),
 
-        /// ================= PETUGAS =================
+        // ================= PETUGAS =================
         '/petugas': (context) => const MainPetugasPage(),
 
-        /// ================= CAMAT =================
+        // ================= CAMAT =================
         '/camat': (context) => const MainPageCamat(),
 
-        /// ================= KASI =================
+        // ================= KASI =================
         '/kasi': (context) => const MainKasiPage(),
 
-        /// ================= ADMIN =================
+        // ================= ADMIN =================
         '/admin': (context) => const AdminPage(),
       },
     );

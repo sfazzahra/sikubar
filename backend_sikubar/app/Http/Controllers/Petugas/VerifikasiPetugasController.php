@@ -1,36 +1,46 @@
 <?php
 
-namespace App\Http\Controllers\petugas;
+namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pengajuan;
+use App\Models\User;
+use App\Providers\NotificationService;
 use Illuminate\Http\Request;
 
 class VerifikasiPetugasController extends Controller
 {
     // ===================== LIST =====================
+
     public function index(Request $request)
     {
+        $seksiId = auth()->user()->seksi_id;
+
         $query = Pengajuan::with([
             'warga:id,name,email',
             'jenisSurat:id,nama',
             'berkas:id,pengajuan_id,nama_berkas,file_path,file_original',
-        ]);
+        ])->whereHas('jenisSurat', fn($q) => $q->where('seksi_id', $seksiId));
 
         if ($request->filled('status')) {
             $flutterStatus = strtolower(trim($request->status));
 
             switch ($flutterStatus) {
+                // Sudah diverifikasi petugas, belum ada kasi yang approve
                 case 'diverifikasi':
-                    $query->where('status', 'diverifikasi')->whereNull('kasi_id');
+                    $query->where('status', 'diverifikasi')
+                          ->whereNull('kasi_id');
                     break;
 
+                // Sudah diteruskan ke kasi, menunggu keputusan kasi
                 case 'menunggu_kasi':
                     $query->where('status', 'ditandatangani');
                     break;
 
+                // Sudah disetujui kasi
                 case 'disetujui_kasi':
-                    $query->where('status', 'diverifikasi')->whereNotNull('kasi_id');
+                    $query->where('status', 'diverifikasi')
+                          ->whereNotNull('kasi_id');
                     break;
 
                 default:
@@ -40,9 +50,7 @@ class VerifikasiPetugasController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->whereHas('warga', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
-            });
+            $query->whereHas('warga', fn($q) => $q->where('name', 'like', '%' . $request->search . '%'));
         }
 
         $data = $query->orderByDesc('created_at')->paginate(10);
@@ -59,21 +67,28 @@ class VerifikasiPetugasController extends Controller
     }
 
     // ===================== DETAIL =====================
+
     public function show($id)
     {
+        $seksiId = auth()->user()->seksi_id;
+
+        // Filter by seksi agar semua petugas di seksi bisa melihat detail,
+        // bukan hanya petugas yang pertama mengambil pengajuan
         $pengajuan = Pengajuan::with([
             'warga:id,name,email,no_hp',
             'jenisSurat',
             'berkas',
-        ])->findOrFail($id);
+        ])->whereHas('jenisSurat', fn($q) => $q->where('seksi_id', $seksiId))
+          ->findOrFail($id);
 
         return response()->json([
             'success' => true,
-            'data' => $this->format($pengajuan, true),
+            'data'    => $this->format($pengajuan, true),
         ]);
     }
 
     // ===================== VERIFIKASI =====================
+
     public function verifikasi(Request $request, $id)
     {
         $request->validate([
@@ -81,37 +96,59 @@ class VerifikasiPetugasController extends Controller
             'catatan' => 'nullable|string|max:500',
         ]);
 
-        $pengajuan = Pengajuan::findOrFail($id);
+        $seksiId = auth()->user()->seksi_id;
+
+        $pengajuan = Pengajuan::with(['warga', 'jenisSurat'])
+            ->whereHas('jenisSurat', fn($q) => $q->where('seksi_id', $seksiId))
+            ->findOrFail($id);
+
         $status = strtolower(trim($pengajuan->status));
 
         if (!in_array($status, ['menunggu', 'diproses'])) {
             return response()->json([
                 'success' => false,
-                'message' => "Pengajuan tidak bisa diproses (status saat ini: $status)",
+                'message' => "Pengajuan tidak bisa diproses (status saat ini: {$status})",
             ], 422);
         }
 
+        // Tandai petugas yang mengambil alih pengajuan ini
         if ($status === 'menunggu') {
             $pengajuan->update([
                 'status'           => 'diproses',
-                'petugas_id'       => $request->user()->id,
+                'petugas_id'       => auth()->id(),
                 'tanggal_diproses' => now(),
             ]);
         }
 
         if ($request->action === 'verifikasi') {
             $pengajuan->update([
-                'status'     => 'diverifikasi',
-                'catatan'    => $request->catatan,
-                'petugas_id' => $request->user()->id,
+                'status'          => 'diverifikasi',
+                'catatan'         => $request->catatan,
+                'petugas_id'      => auth()->id(),
+                'tanggal_selesai' => now(),
             ]);
+
+            NotificationService::pengajuanDiproses(
+                $pengajuan->warga_id,
+                $pengajuan->jenisSurat->nama,
+                $pengajuan->id
+            );
+
             $message = 'Berkas berhasil diverifikasi';
         } else {
             $pengajuan->update([
                 'status'           => 'ditolak',
                 'alasan_penolakan' => $request->catatan,
-                'petugas_id'       => $request->user()->id,
+                'petugas_id'       => auth()->id(),
             ]);
+
+            NotificationService::pengajuanDitolakPetugas(
+                $pengajuan->warga_id,
+                $pengajuan->jenisSurat->nama,
+                $request->catatan ?? '-',
+                $pengajuan->id
+            );
+
             $message = 'Berkas ditolak';
         }
 
@@ -123,19 +160,25 @@ class VerifikasiPetugasController extends Controller
     }
 
     // ===================== TERUSKAN KE KASI =====================
+
     public function teruskan(Request $request, $id)
     {
         $request->validate([
             'catatan' => 'nullable|string|max:500',
         ]);
 
-        $pengajuan = Pengajuan::findOrFail($id);
+        $seksiId = auth()->user()->seksi_id;
+
+        $pengajuan = Pengajuan::with(['warga', 'jenisSurat'])
+            ->whereHas('jenisSurat', fn($q) => $q->where('seksi_id', $seksiId))
+            ->findOrFail($id);
+
         $status = strtolower(trim($pengajuan->status));
 
-        if ($status !== 'diverifikasi' || $pengajuan->kasi_id !== null) {
+        if ($status !== 'diverifikasi') {
             return response()->json([
                 'success' => false,
-                'message' => "Hanya pengajuan diverifikasi yang bisa diteruskan (status saat ini: $status)",
+                'message' => "Hanya pengajuan yang sudah diverifikasi yang bisa diteruskan (status saat ini: {$status})",
             ], 422);
         }
 
@@ -143,6 +186,20 @@ class VerifikasiPetugasController extends Controller
             'status'  => 'ditandatangani',
             'catatan' => $request->catatan ?? $pengajuan->catatan,
         ]);
+
+        // Kirim notifikasi ke SEMUA kasi di seksi yang sesuai
+        $kasiIds = User::where('role', 'kasi')
+            ->where('seksi_id', $seksiId)
+            ->pluck('id');
+
+        foreach ($kasiIds as $kasiId) {
+            NotificationService::pengajuanDiteruskanKeKasi(
+                $kasiId,
+                $pengajuan->warga->name,
+                $pengajuan->jenisSurat->nama,
+                $pengajuan->id
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -152,19 +209,62 @@ class VerifikasiPetugasController extends Controller
     }
 
     // ===================== UPLOAD SURAT =====================
+
     public function uploadSurat(Request $request, $id)
     {
         $request->validate([
             'surat' => 'required|file|mimes:pdf|max:5120',
         ]);
 
-        $pengajuan = Pengajuan::findOrFail($id);
+        $seksiId = auth()->user()->seksi_id;
+
+        $pengajuan = Pengajuan::with(['warga', 'jenisSurat'])
+            ->whereHas('jenisSurat', fn($q) => $q->where('seksi_id', $seksiId))
+            ->findOrFail($id);
+
         $path = $request->file('surat')->store('surat', 'public');
 
         $pengajuan->update([
-            'surat_path' => $path,
-            'status'     => 'selesai',
+            'surat_path'      => $path,
+            'status'          => 'selesai',
+            'tanggal_selesai' => now(),
         ]);
+
+        // Notifikasi ke semua kasi di seksi — surat yang mereka setujui sudah selesai dibuat
+        $kasiIds = User::where('role', 'kasi')
+            ->where('seksi_id', $seksiId)
+            ->pluck('id');
+
+        foreach ($kasiIds as $kasiId) {
+            NotificationService::suratSelesaiDiupload(
+                null,
+                $kasiId,
+                $pengajuan->warga_id,
+                $pengajuan->warga->name,
+                $pengajuan->jenisSurat->nama,
+                $pengajuan->id
+            );
+        }
+
+        // Notifikasi ke semua camat
+        $camatIds = User::where('role', 'camat')->pluck('id');
+        foreach ($camatIds as $camatId) {
+            NotificationService::suratSelesaiDiupload(
+                null,
+                $camatId,
+                $pengajuan->warga_id,
+                $pengajuan->warga->name,
+                $pengajuan->jenisSurat->nama,
+                $pengajuan->id
+            );
+        }
+
+        // Notifikasi ke warga bahwa suratnya sudah selesai
+        NotificationService::suratSelesaiUntukWarga(
+            $pengajuan->warga_id,
+            $pengajuan->jenisSurat->nama,
+            $pengajuan->id
+        );
 
         return response()->json([
             'success' => true,
@@ -174,6 +274,7 @@ class VerifikasiPetugasController extends Controller
     }
 
     // ===================== FORMAT RESPONSE =====================
+
     private function format(Pengajuan $p, bool $detail = false): array
     {
         $rawStatus = strtolower($p->status);
@@ -196,6 +297,7 @@ class VerifikasiPetugasController extends Controller
             'alasan_penolakan' => $p->alasan_penolakan,
             'tanggal'          => $p->created_at?->format('d M Y'),
             'tanggal_diproses' => $p->tanggal_diproses?->format('d M Y H:i'),
+            'tanggal_selesai'  => $p->tanggal_selesai?->toISOString(),
 
             'user' => $p->warga ? [
                 'id'   => $p->warga->id,

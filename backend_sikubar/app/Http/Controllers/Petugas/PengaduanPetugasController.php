@@ -5,6 +5,7 @@ namespace App\Http\Controllers\petugas;
 use App\Http\Controllers\Controller;
 use App\Models\Pengaduan;
 use Illuminate\Http\Request;
+use App\Providers\NotificationService;
 
 /**
  * FR-14 : Petugas melihat dan menanggapi pengaduan masyarakat
@@ -70,6 +71,12 @@ class PengaduanPetugasController extends Controller
             'dibalas_oleh'    => $request->user()->id,
             'tanggal_dibalas' => now(),
         ]);
+
+        NotificationService::pengaduanDitanggapi(
+    $pengaduan->warga_id,
+    $pengaduan->judul,
+    $pengaduan->id
+);
 
         return response()->json([
             'success' => true,

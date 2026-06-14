@@ -173,91 +173,82 @@ class ApiService {
       'page': page.toString(),
       if (status != null) 'status': status,
     };
-
     final res = await http.get(
-      Uri.parse('$baseUrl/warga/pengajuan')
-          .replace(queryParameters: query),
+      Uri.parse('$baseUrl/warga/pengajuan').replace(queryParameters: query),
       headers: await _headers(),
     );
-
     return _parse(res);
   }
-
+ 
   Future<Map<String, dynamic>> getDetailPengajuan(int id) async {
     final res = await http.get(
-      Uri.parse('$baseUrl/warga/pengajuan/$id'),
-      headers: await _headers(),
-    );
-
+        Uri.parse('$baseUrl/warga/pengajuan/$id'), headers: await _headers());
     return _parse(res);
   }
-
+ 
+  /// FR-03 + FR-04: Buat pengajuan baru + upload berkas (berkas wajib & pendukung)
+  /// berkas format: [{'nama': 'KTP', 'bytes': Uint8List, 'filename': 'ktp.jpg'}]
   Future<Map<String, dynamic>> buatPengajuan({
     required int jenisSuratId,
-    required String tujuan,
+    String? tujuan,
     required List<Map<String, dynamic>> berkas,
   }) async {
     final token = await _getToken();
-
     final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/warga/pengajuan'),
-    );
-
+        'POST', Uri.parse('$baseUrl/warga/pengajuan'));
+ 
     request.headers.addAll({
       'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     });
-
+ 
     request.fields['jenis_surat_id'] = jenisSuratId.toString();
-    request.fields['tujuan'] = tujuan;
-
+    if (tujuan != null && tujuan.isNotEmpty) {
+      request.fields['tujuan'] = tujuan;
+    }
+ 
     for (int i = 0; i < berkas.length; i++) {
       request.fields['berkas[$i][nama]'] = berkas[i]['nama'] as String;
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'berkas[$i][file]',
-          berkas[i]['bytes'] as Uint8List,
-          filename: berkas[i]['filename'] as String,
-        ),
-      );
+      request.files.add(http.MultipartFile.fromBytes(
+        'berkas[$i][file]',
+        berkas[i]['bytes'] as Uint8List,
+        filename: berkas[i]['filename'] as String,
+      ));
     }
-
+ 
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);
-
+    print("STATUS: ${res.statusCode}");
+    print("BODY: ${res.body}");
     return _parse(res);
   }
-
+ 
+  Future<Map<String, dynamic>> getBerkas(
+      int pengajuanId, int berkasId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/warga/pengajuan/$pengajuanId/berkas/$berkasId'),
+      headers: await _headers(),
+    );
+    return _parse(res);
+  }
+ 
   Future<Map<String, dynamic>> replaceBerkas({
     required int pengajuanId,
     required int berkasId,
     required File file,
   }) async {
     final token = await _getToken();
-
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse(
-        '$baseUrl/warga/pengajuan/$pengajuanId/berkas/$berkasId',
-      ),
+      Uri.parse('$baseUrl/warga/pengajuan/$pengajuanId/berkas/$berkasId'),
     );
-
     request.headers.addAll({
       'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     });
-
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'file',
-        file.path,
-      ),
-    );
-
+    request.files.add(await http.MultipartFile.fromPath('file', file.path));
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);
-
     return _parse(res);
   }
 
@@ -876,6 +867,168 @@ print("BODY: ${res.body}");
 
     return _parse(res);
   }
+
+    // =========================================================================
+  // CAMAT — DASHBOARD
+  // =========================================================================
+
+  Future<Map<String, dynamic>> getCamatDashboard() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/camat/dashboard'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  // =========================================================================
+  // CAMAT — PENGAJUAN
+  // =========================================================================
+
+  Future<Map<String, dynamic>> getCamatPengajuan({
+    String? status,
+    String? search,
+    int page = 1,
+  }) async {
+    final query = {
+      'page': page.toString(),
+      if (status != null) 'status': status,
+      if (search != null && search.isNotEmpty) 'search': search,
+    };
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/camat/pengajuan')
+          .replace(queryParameters: query),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> getCamatDetailPengajuan(int id) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/camat/pengajuan/$id'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  // =========================================================================
+  // CAMAT — PENGADUAN
+  // =========================================================================
+
+  Future<Map<String, dynamic>> getCamatPengaduan({
+    String? status,
+    String? search,
+    int page = 1,
+  }) async {
+    final query = {
+      'page': page.toString(),
+      if (status != null) 'status': status,
+      if (search != null && search.isNotEmpty) 'search': search,
+    };
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/camat/pengaduan')
+          .replace(queryParameters: query),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> getCamatDetailPengaduan(int id) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/camat/pengaduan/$id'),
+      headers: await _headers(),
+    );
+
+    return _parse(res);
+  }
+
+  Future<Map<String, dynamic>> getNotifikasi() async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/notifikasi'),
+    headers: await _headers(),
+  );
+
+  return _parse(res);
+}
+
+Future<Map<String, dynamic>> getUnreadNotifikasiCount() async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/notifikasi/unread-count'),
+    headers: await _headers(),
+  );
+
+  return _parse(res);
+}
+
+Future<void> tandaiNotifikasiDibaca(int id) async {
+  await http.put(
+    Uri.parse('$baseUrl/notifikasi/$id/read'),
+    headers: await _headers(),
+  );
+}
+
+Future<void> tandaiSemuaNotifikasiDibaca() async {
+  await http.put(
+    Uri.parse('$baseUrl/notifikasi/read-all'),
+    headers: await _headers(),
+  );
+}
+
+// =========================================================================
+// CAMAT — PROFILE
+// =========================================================================
+
+Future<Map<String, dynamic>> getProfilCamat() async {
+  final res = await http.get(
+    Uri.parse('$baseUrl/camat/profile'),
+    headers: await _headers(),
+  );
+
+  return _parse(res);
+}
+
+Future<Map<String, dynamic>> updateProfilCamat(
+  Map<String, dynamic> data,
+) async {
+  final res = await http.put(
+    Uri.parse('$baseUrl/camat/profile'),
+    headers: await _headers(),
+    body: jsonEncode(data),
+  );
+
+  return _parse(res);
+}
+
+Future<Map<String, dynamic>> updatePasswordCamat(
+  String passwordLama,
+  String passwordBaru,
+  String konfirmasi,
+) async {
+  final res = await http.put(
+    Uri.parse('$baseUrl/camat/profile/password'),
+    headers: await _headers(),
+    body: jsonEncode({
+      'password_lama': passwordLama,
+      'password_baru': passwordBaru,
+      'password_baru_confirmation': konfirmasi,
+    }),
+  );
+
+  return _parse(res);
+}
+
+Future<void> logoutCamat() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.remove('auth_token');
+  await prefs.remove('user_data');
+  await prefs.remove('user_role');
+}
 }
 // ─── Custom exception ────────────────────────────────────────────────────────
 class ApiException implements Exception {
@@ -890,3 +1043,4 @@ class ApiException implements Exception {
   @override
   String toString() => message;
 }
+

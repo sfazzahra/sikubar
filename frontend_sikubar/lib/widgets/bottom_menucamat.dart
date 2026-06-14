@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 
-// 🔥 IMPORT HALAMAN CAMAT
+// HALAMAN CAMAT
 import '../pages/camat/berandacamat.dart';
 import '../pages/camat/profilecamat.dart';
-import '../pages/camat/persetujuan.dart';
-import '../pages/camat/monitoringcamat.dart';
-import '../pages/camat/pengaduancamat.dart';
-import '../pages/camat/notifikasicamat.dart';
+import '../pages/camat/monitoringpengajuan_camat.dart';
+import '../pages/camat/monitoringpengaduan_camat.dart';
 
-/// ================= APP BAR =================
+/// ================= APP BAR CAMAT =================
 class AppBarCamat extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
@@ -19,74 +17,58 @@ class AppBarCamat extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(100),
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF2F80ED), Color(0xFF56CCF2)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF2F80ED),
+            Color(0xFF56CCF2),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 90,
-            child: Stack(
-              children: [
-
-                /// 🔙 BACK BUTTON
-                if (Navigator.canPop(context))
-                  Positioned(
-                    left: 16,
-                    top: 10,
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.arrow_back,
-                          color: Colors.white, size: 26),
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 90,
+          child: Stack(
+            children: [
+              if (Navigator.canPop(context))
+                Positioned(
+                  left: 16,
+                  top: 10,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
+                ),
 
-                /// 🎯 TITLE + ICON
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.account_balance,
-                          color: Colors.white, size: 32),
-                      const SizedBox(height: 4),
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.account_balance,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-
-                /// 🔔 NOTIF
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: IconButton(
-                    icon: const Icon(Icons.notifications,
-                        color: Colors.white),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const NotifikasiCamatPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -113,27 +95,28 @@ class BottomMenuCamat extends StatelessWidget {
 
     switch (index) {
       case 0:
-        page = const BerandaCamatPage();
+        page = const DashboardCamatPage();
         break;
+
       case 1:
         page = const ProfilCamatPage();
         break;
+
       case 2:
-        page = const PersetujuanPage();
+        page = const MonitoringPengajuanCamatPage();
         break;
+
       case 3:
-        page = const MonitoringPage();
+        page = const MonitoringPengaduanCamatPage();
         break;
-      case 4:
-        page = const PengaduanCamatPage();
-        break;
+
       default:
-        page = const BerandaCamatPage();
+        page = const DashboardCamatPage();
     }
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => page),
+      MaterialPageRoute(builder: (_) => page),
     );
   }
 
@@ -146,27 +129,22 @@ class BottomMenuCamat extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       showUnselectedLabels: true,
       onTap: (index) => _navigate(context, index),
-
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: "Beranda",
+          label: 'Beranda',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
-          label: "Profil",
+          label: 'Profil',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.check_circle),
-          label: "Persetujuan",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.bar_chart),
-          label: "Monitoring",
+          icon: Icon(Icons.assignment),
+          label: 'Pengajuan',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.report_problem),
-          label: "Pengaduan",
+          label: 'Pengaduan',
         ),
       ],
     );
