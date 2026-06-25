@@ -53,9 +53,9 @@ class _LoginPageState extends State<LoginPage> {
       String endpoint;
 
       if (selectedRole == 'warga') {
-        endpoint = "http://127.0.0.1:8000/api/warga/login";
+        endpoint = "http://192.168.110.67:8000/api/warga/login";
       } else {
-        endpoint = "http://127.0.0.1:8000/api/staff/login";
+        endpoint = "http://192.168.110.67:8000/api/staff/login";
       }
 
       final response = await http.post(
@@ -185,13 +185,12 @@ class _LoginPageState extends State<LoginPage> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const Icon(
-                  Icons.account_balance,
-                  size: 80,
-                  color: Colors.white,
-                ),
-
-                const SizedBox(height: 20),
+                
+               Image.asset(
+  'assets/images/LogoSiKubar.png', // sesuaikan nama file
+  width: 105,
+  height: 105,
+),
 
                 const Text(
                   "Pelayanan Publik",

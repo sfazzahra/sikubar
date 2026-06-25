@@ -97,7 +97,7 @@ class PengaduanPetugasController extends Controller
             'tanggal_dibalas' => $p->tanggal_dibalas?->format('d M Y H:i'),
             'nama'            => $p->warga?->name,
             'dibalas_oleh'    => $p->pembalas?->name,
-            'bukti_path'      => $p->bukti_path ? asset('storage/' . $p->bukti_path) : null,
+            'bukti_path'      => $p->bukti_path,
         ];
     }
 }

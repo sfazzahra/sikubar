@@ -4,6 +4,11 @@ import '../../services/api_service.dart';
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB 1 — PENGGUNA
 // ══════════════════════════════════════════════════════════════════════════════
+
+const Color _kPrimary     = Color(0xFF2F80ED);
+const Color _kPrimaryDark = Color(0xFF1B5FC4);
+const Color _kBg          = Color(0xFFF5F7FB);
+
 class AdminPenggunaTab extends StatefulWidget {
   const AdminPenggunaTab({super.key});
 
@@ -21,13 +26,12 @@ class _AdminPenggunaTabState extends State<AdminPenggunaTab> {
   final passCtrl  = TextEditingController();
   final konfCtrl  = TextEditingController();
 
-  String role    = 'warga';
+  String role     = 'warga';
   int?   seksiId;
   bool   showForm  = false;
   bool   isLoading = false;
   bool   isSaving  = false;
 
-  // Dikelompokkan: role → list user
   Map<String, List<Map<String, dynamic>>> grouped = {};
 
   static const Map<int, String> seksiNama = {
@@ -56,12 +60,18 @@ class _AdminPenggunaTabState extends State<AdminPenggunaTab> {
     _load();
   }
 
+  @override
+  void dispose() {
+    namaCtrl.dispose(); nikCtrl.dispose(); emailCtrl.dispose();
+    hpCtrl.dispose(); passCtrl.dispose(); konfCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     setState(() => isLoading = true);
     try {
-      final res = await _api.getUsers();
-      final list = List<Map<String, dynamic>>.from(
-          res['data']['data'] ?? []);
+      final res  = await _api.getUsers();
+      final list = List<Map<String, dynamic>>.from(res['data']['data'] ?? []);
       final Map<String, List<Map<String, dynamic>>> g = {};
       for (final u in list) {
         final r = u['role'] as String? ?? 'warga';
@@ -95,14 +105,14 @@ class _AdminPenggunaTabState extends State<AdminPenggunaTab> {
     setState(() => isSaving = true);
     try {
       final body = <String, dynamic>{
-        'name'                  : namaCtrl.text.trim(),
-        'role'                  : role,
-        'password'              : passCtrl.text,
-        'password_confirmation' : konfCtrl.text,
-        'no_hp'                 : hpCtrl.text.trim(),
+        'name'                 : namaCtrl.text.trim(),
+        'role'                 : role,
+        'password'             : passCtrl.text,
+        'password_confirmation': konfCtrl.text,
+        'no_hp'                : hpCtrl.text.trim(),
       };
-      if (role == 'warga') body['nik'] = nikCtrl.text.trim();
-      else body['email'] = emailCtrl.text.trim();
+      if (role == 'warga') body['nik']   = nikCtrl.text.trim();
+      else                 body['email'] = emailCtrl.text.trim();
       if (role == 'petugas' || role == 'kasi') body['seksi_id'] = seksiId;
 
       await _api.createUser(body);
@@ -121,17 +131,22 @@ class _AdminPenggunaTabState extends State<AdminPenggunaTab> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Hapus Akun'),
-        content: Text('Hapus akun "$nama"?'),
+        title: const Text('Hapus Akun',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text('Akun "$nama" akan dihapus secara permanen.',
+            style: const TextStyle(fontSize: 13.5)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Batal')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10))),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -155,211 +170,439 @@ class _AdminPenggunaTabState extends State<AdminPenggunaTab> {
   void _snack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: isError ? Colors.red : Colors.green,
+      backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ));
   }
+
+  // ── SUMMARY HEADER ─────────────────────────────────────────────────────────
+  int get _totalUsers =>
+      grouped.values.fold(0, (sum, list) => sum + list.length);
 
   @override
   Widget build(BuildContext context) {
     return isLoading
-        ? const Center(child: CircularProgressIndicator())
+        ? const Center(child: CircularProgressIndicator(color: _kPrimary))
         : SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-              // TOMBOL TAMBAH
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2F80ED),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16))),
-                  onPressed: () => setState(() => showForm = !showForm),
-                  icon: Icon(showForm ? Icons.close : Icons.person_add,
-                      color: Colors.white),
-                  label: Text(showForm ? 'Tutup Form' : 'Tambah Pengguna',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ),
-
-              // FORM
-              if (showForm) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10)]),
-                  child: Column(children: [
-                    _dropdownRole(),
-                    const SizedBox(height: 12),
-                    _inp(namaCtrl, 'Nama Lengkap', Icons.person_outline),
-                    if (role == 'warga')
-                      _inp(nikCtrl, 'NIK (16 digit)', Icons.badge_outlined,
-                          type: TextInputType.number),
-                    if (role != 'warga')
-                      _inp(emailCtrl, 'Email', Icons.email_outlined,
-                          type: TextInputType.emailAddress),
-                    if (role == 'petugas' || role == 'kasi')
-                      _dropdownSeksi(),
-                    _inp(hpCtrl, 'No HP', Icons.phone_outlined,
-                        type: TextInputType.phone),
-                    _inp(passCtrl, 'Password', Icons.lock_outline,
-                        obscure: true),
-                    _inp(konfCtrl, 'Konfirmasi Password', Icons.lock_outline,
-                        obscure: true),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity, height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2F80ED),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16))),
-                        onPressed: isSaving ? null : _simpan,
-                        child: isSaving
-                            ? const SizedBox(height: 20, width: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2))
-                            : const Text('Simpan',
-                                style: TextStyle(color: Colors.white,
-                                    fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ]),
-                ),
-              ],
-
+              // ── SUMMARY CARD ──────────────────────────────────────────────
+              _summaryCard(),
               const SizedBox(height: 20),
 
-              // DAFTAR TERKELOMPOK
+              // ── TOMBOL TAMBAH ─────────────────────────────────────────────
+              _addButton(),
+
+              // ── FORM ──────────────────────────────────────────────────────
+              if (showForm) ...[
+                const SizedBox(height: 16),
+                _buildForm(),
+              ],
+
+              const SizedBox(height: 24),
+
+              // ── HEADER DAFTAR ─────────────────────────────────────────────
               Row(children: [
+                Container(
+                  width: 4, height: 20,
+                  decoration: BoxDecoration(
+                      color: _kPrimary, borderRadius: BorderRadius.circular(4)),
+                ),
+                const SizedBox(width: 10),
                 const Text('Daftar Pengguna',
                     style: TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.bold)),
+                        fontSize: 16, fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B2433))),
                 const Spacer(),
-                IconButton(
-                    onPressed: _load,
-                    icon: const Icon(Icons.refresh,
-                        color: Color(0xFF2F80ED))),
+                GestureDetector(
+                  onTap: _load,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.refresh_rounded,
+                        color: _kPrimary, size: 18),
+                  ),
+                ),
               ]),
-              const SizedBox(height: 8),
+              const SizedBox(height: 14),
 
+              // ── ROLE GROUPS ───────────────────────────────────────────────
               ...roleOrder.map((r) {
-  final list = grouped[r];
-
-  if (list == null || list.isEmpty) {
-    return const SizedBox();
-  }
-
-  return Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 8,
-        ),
-      ],
-    ),
-    child: ExpansionTile(
-      tilePadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 4,
-      ),
-      childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      leading: CircleAvatar(
-        backgroundColor: _roleColor(r).withOpacity(0.15),
-        child: Icon(
-          _roleIcon(r),
-          color: _roleColor(r),
-        ),
-      ),
-      title: Text(
-        roleLabel[r] ?? r,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: _roleColor(r),
-        ),
-      ),
-      subtitle: Text('${list.length} pengguna'),
-      children: [
-        ...list.map((u) => _userCard(u, r)),
-      ],
-    ),
-  );
-}),
+                final list = grouped[r];
+                if (list == null || list.isEmpty) return const SizedBox();
+                return _roleGroup(r, list);
+              }),
             ]),
           );
   }
 
-  Widget _userCard(Map<String, dynamic> u, String r) {
-    final nama  = u['name'] ?? '-';
-    final sub   = u['email'] ?? u['nik'] ?? '-';
-    final seksi = u['seksi']?['nama'] as String?;
-
+  // ── SUMMARY CARD ──────────────────────────────────────────────────────────
+  Widget _summaryCard() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(
-              color: Colors.black.withOpacity(0.04), blurRadius: 6)]),
-      child: Row(children: [
-        CircleAvatar(
-          backgroundColor: _roleColor(r).withOpacity(0.15),
-          child: Text(
-            nama.isNotEmpty ? nama[0].toUpperCase() : '?',
-            style: TextStyle(
-                color: _roleColor(r), fontWeight: FontWeight.bold),
-          ),
+        gradient: const LinearGradient(
+          colors: [_kPrimary, _kPrimaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(nama, style: const TextStyle(
-              fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 2),
-          Text(sub, style: const TextStyle(
-              color: Colors.grey, fontSize: 12)),
-          if (seksi != null)
-            Text(seksi, style: const TextStyle(
-                color: Colors.blueGrey, fontSize: 11)),
-        ])),
-        IconButton(
-          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-          onPressed: () => _hapus(u['id'], nama),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: _kPrimary.withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 8)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(16)),
+            child: const Icon(Icons.group_rounded,
+                color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Total Pengguna',
+                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text('$_totalUsers Akun',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold)),
+            ]),
+          ),
+          // mini breakdown
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            ...roleOrder.where((r) => grouped[r] != null).map((r) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '${roleLabel[r]}: ${grouped[r]!.length}',
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            )),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  // ── ADD BUTTON ────────────────────────────────────────────────────────────
+  Widget _addButton() {
+    return GestureDetector(
+      onTap: () => setState(() { if (showForm) _resetForm(); else showForm = true; }),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          color: showForm ? Colors.grey.shade100 : _kPrimary,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: showForm ? [] : [
+            BoxShadow(
+                color: _kPrimary.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6)),
+          ],
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(showForm ? Icons.close_rounded : Icons.person_add_rounded,
+              color: showForm ? Colors.grey : Colors.white, size: 20),
+          const SizedBox(width: 8),
+          Text(showForm ? 'Tutup Form' : 'Tambah Pengguna Baru',
+              style: TextStyle(
+                  color: showForm ? Colors.grey.shade600 : Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14)),
+        ]),
+      ),
+    );
+  }
+
+  // ── FORM ──────────────────────────────────────────────────────────────────
+  Widget _buildForm() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Form header
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.person_add_rounded,
+                color: _kPrimary, size: 18),
+          ),
+          const SizedBox(width: 10),
+          const Text('Data Pengguna Baru',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: Color(0xFF1B2433))),
+        ]),
+        const SizedBox(height: 20),
+
+        // Role selector chips
+        _roleSelectorChips(),
+        const SizedBox(height: 16),
+
+        _inp(namaCtrl, 'Nama Lengkap', Icons.person_outline),
+        if (role == 'warga')
+          _inp(nikCtrl, 'NIK (16 digit)', Icons.badge_outlined,
+              type: TextInputType.number),
+        if (role != 'warga')
+          _inp(emailCtrl, 'Email', Icons.email_outlined,
+              type: TextInputType.emailAddress),
+        if (role == 'petugas' || role == 'kasi') ...[
+          _dropdownSeksi(),
+          const SizedBox(height: 12),
+        ],
+        _inp(hpCtrl, 'No HP', Icons.phone_outlined,
+            type: TextInputType.phone),
+
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Row(children: [
+            Expanded(child: Divider()),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text('Keamanan',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w600)),
+            ),
+            Expanded(child: Divider()),
+          ]),
+        ),
+
+        _inp(passCtrl, 'Password', Icons.lock_outline, obscure: true),
+        _inp(konfCtrl, 'Konfirmasi Password', Icons.lock_outline, obscure: true),
+        const SizedBox(height: 8),
+
+        // Save button
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14))),
+            onPressed: isSaving ? null : _simpan,
+            child: isSaving
+                ? const SizedBox(height: 20, width: 20,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2))
+                : const Text('Buat Akun',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15)),
+          ),
         ),
       ]),
     );
   }
 
+  // ── ROLE SELECTOR CHIPS ────────────────────────────────────────────────────
+  Widget _roleSelectorChips() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Role / Jabatan',
+          style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600)),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: ['warga', 'petugas', 'kasi', 'camat', 'admin'].map((r) {
+          final selected = role == r;
+          final color    = _roleColor(r);
+          return GestureDetector(
+            onTap: () => setState(() { role = r; seksiId = null; }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? color : color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: selected ? color : color.withOpacity(0.2)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(_roleIcon(r),
+                    size: 14,
+                    color: selected ? Colors.white : color),
+                const SizedBox(width: 6),
+                Text(roleLabel[r] ?? r,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: selected ? Colors.white : color)),
+              ]),
+            ),
+          );
+        }).toList(),
+      ),
+    ]);
+  }
+
+  // ── ROLE GROUP ─────────────────────────────────────────────────────────────
+  Widget _roleGroup(String r, List<Map<String, dynamic>> list) {
+    final color = _roleColor(r);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          shape: const Border(),
+          leading: Container(
+            width: 42, height: 42,
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12)),
+            child: Icon(_roleIcon(r), color: color, size: 20),
+          ),
+          title: Text(roleLabel[r] ?? r,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: color)),
+          subtitle: Text('${list.length} pengguna',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20)),
+            child: Text('${list.length}',
+                style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
+          ),
+          children: list.map((u) => _userCard(u, r)).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ── USER CARD ──────────────────────────────────────────────────────────────
+  Widget _userCard(Map<String, dynamic> u, String r) {
+    final nama  = u['name']  ?? '-';
+    final sub   = u['email'] ?? u['nik'] ?? '-';
+    final seksi = u['seksi']?['nama'] as String?;
+    final color = _roleColor(r);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(children: [
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12)),
+          alignment: Alignment.center,
+          child: Text(
+            nama.isNotEmpty ? nama[0].toUpperCase() : '?',
+            style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(nama,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                  color: Color(0xFF1B2433))),
+          const SizedBox(height: 2),
+          Text(sub,
+              style: const TextStyle(
+                  color: Color(0xFF94A3B8), fontSize: 12)),
+          if (seksi != null) ...[
+            const SizedBox(height: 2),
+            Text(seksi,
+                style: TextStyle(
+                    color: color.withOpacity(0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500)),
+          ],
+        ])),
+        GestureDetector(
+          onTap: () => _hapus(u['id'], nama),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.delete_outline_rounded,
+                color: Colors.red, size: 18),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
   Color _roleColor(String r) {
     switch (r) {
-      case 'admin'  : return Colors.purple;
-      case 'camat'  : return Colors.indigo;
-      case 'kasi'   : return Colors.blue;
-      case 'petugas': return Colors.teal;
-      default       : return Colors.orange;
+      case 'admin'  : return const Color(0xFF7C3AED);
+      case 'camat'  : return const Color(0xFF1B5FC4);
+      case 'kasi'   : return const Color(0xFF2F80ED);
+      case 'petugas': return const Color(0xFF0D9488);
+      default       : return const Color(0xFFF97316);
     }
   }
 
   IconData _roleIcon(String r) {
     switch (r) {
-      case 'admin'  : return Icons.admin_panel_settings;
-      case 'camat'  : return Icons.account_balance;
-      case 'kasi'   : return Icons.supervisor_account;
-      case 'petugas': return Icons.badge;
-      default       : return Icons.person;
+      case 'admin'  : return Icons.admin_panel_settings_rounded;
+      case 'camat'  : return Icons.account_balance_rounded;
+      case 'kasi'   : return Icons.supervisor_account_rounded;
+      case 'petugas': return Icons.badge_rounded;
+      default       : return Icons.person_rounded;
     }
   }
 
@@ -371,60 +614,43 @@ class _AdminPenggunaTabState extends State<AdminPenggunaTab> {
         controller: c,
         obscureText: obscure,
         keyboardType: type,
+        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          filled: true, fillColor: const Color(0xFFF5F7FB),
-          prefixIcon: Icon(icon, color: const Color(0xFF2F80ED)),
           labelText: label,
+          labelStyle: const TextStyle(fontSize: 13),
+          prefixIcon: Icon(icon, color: _kPrimary, size: 19),
+          filled: true,
+          fillColor: _kBg,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none),
-        ),
-      ),
-    );
-  }
-
-  Widget _dropdownRole() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-          color: const Color(0xFFF5F7FB),
-          borderRadius: BorderRadius.circular(16)),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: role,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(value: 'warga',   child: Text('Warga')),
-            DropdownMenuItem(value: 'petugas', child: Text('Petugas')),
-            DropdownMenuItem(value: 'kasi',    child: Text('Kasi')),
-            DropdownMenuItem(value: 'camat',   child: Text('Camat')),
-            DropdownMenuItem(value: 'admin',   child: Text('Admin')),
-          ],
-          onChanged: (v) => setState(() { role = v!; seksiId = null; }),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: _kPrimary, width: 1.4)),
         ),
       ),
     );
   }
 
   Widget _dropdownSeksi() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, top: 12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-            color: const Color(0xFFF5F7FB),
-            borderRadius: BorderRadius.circular(16)),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<int>(
-            value: seksiId,
-            isExpanded: true,
-            hint: const Text('Pilih Seksi'),
-            items: seksiNama.entries
-                .map((e) => DropdownMenuItem(
-                    value: e.key, child: Text(e.value)))
-                .toList(),
-            onChanged: (v) => setState(() => seksiId = v),
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+          color: _kBg, borderRadius: BorderRadius.circular(14)),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: seksiId,
+          isExpanded: true,
+          hint: Text('Pilih Seksi',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+          items: seksiNama.entries
+              .map((e) => DropdownMenuItem(
+                  value: e.key,
+                  child: Text(e.value, style: const TextStyle(fontSize: 13))))
+              .toList(),
+          onChanged: (v) => setState(() => seksiId = v),
         ),
       ),
     );

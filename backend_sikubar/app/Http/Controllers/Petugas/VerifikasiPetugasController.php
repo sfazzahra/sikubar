@@ -26,18 +26,15 @@ class VerifikasiPetugasController extends Controller
             $flutterStatus = strtolower(trim($request->status));
 
             switch ($flutterStatus) {
-                // Sudah diverifikasi petugas, belum ada kasi yang approve
                 case 'diverifikasi':
                     $query->where('status', 'diverifikasi')
                           ->whereNull('kasi_id');
                     break;
 
-                // Sudah diteruskan ke kasi, menunggu keputusan kasi
                 case 'menunggu_kasi':
                     $query->where('status', 'ditandatangani');
                     break;
 
-                // Sudah disetujui kasi
                 case 'disetujui_kasi':
                     $query->where('status', 'diverifikasi')
                           ->whereNotNull('kasi_id');
@@ -72,8 +69,6 @@ class VerifikasiPetugasController extends Controller
     {
         $seksiId = auth()->user()->seksi_id;
 
-        // Filter by seksi agar semua petugas di seksi bisa melihat detail,
-        // bukan hanya petugas yang pertama mengambil pengajuan
         $pengajuan = Pengajuan::with([
             'warga:id,name,email,no_hp',
             'jenisSurat',
@@ -111,7 +106,6 @@ class VerifikasiPetugasController extends Controller
             ], 422);
         }
 
-        // Tandai petugas yang mengambil alih pengajuan ini
         if ($status === 'menunggu') {
             $pengajuan->update([
                 'status'           => 'diproses',
@@ -140,6 +134,7 @@ class VerifikasiPetugasController extends Controller
                 'status'           => 'ditolak',
                 'alasan_penolakan' => $request->catatan,
                 'petugas_id'       => auth()->id(),
+                'tanggal_selesai'  => now(), // ✅ fix: tanggal ditolak
             ]);
 
             NotificationService::pengajuanDitolakPetugas(
@@ -187,7 +182,6 @@ class VerifikasiPetugasController extends Controller
             'catatan' => $request->catatan ?? $pengajuan->catatan,
         ]);
 
-        // Kirim notifikasi ke SEMUA kasi di seksi yang sesuai
         $kasiIds = User::where('role', 'kasi')
             ->where('seksi_id', $seksiId)
             ->pluck('id');
@@ -230,7 +224,6 @@ class VerifikasiPetugasController extends Controller
             'tanggal_selesai' => now(),
         ]);
 
-        // Notifikasi ke semua kasi di seksi — surat yang mereka setujui sudah selesai dibuat
         $kasiIds = User::where('role', 'kasi')
             ->where('seksi_id', $seksiId)
             ->pluck('id');
@@ -246,7 +239,6 @@ class VerifikasiPetugasController extends Controller
             );
         }
 
-        // Notifikasi ke semua camat
         $camatIds = User::where('role', 'camat')->pluck('id');
         foreach ($camatIds as $camatId) {
             NotificationService::suratSelesaiDiupload(
@@ -259,7 +251,6 @@ class VerifikasiPetugasController extends Controller
             );
         }
 
-        // Notifikasi ke warga bahwa suratnya sudah selesai
         NotificationService::suratSelesaiUntukWarga(
             $pengajuan->warga_id,
             $pengajuan->jenisSurat->nama,
@@ -299,7 +290,8 @@ class VerifikasiPetugasController extends Controller
             'tanggal_diproses' => $p->tanggal_diproses?->format('d M Y H:i'),
             'tanggal_selesai'  => $p->tanggal_selesai?->toISOString(),
 
-            'user' => $p->warga ? [
+            // ✅ fix: ganti key 'user' jadi 'warga'
+            'warga' => $p->warga ? [
                 'id'   => $p->warga->id,
                 'nama' => $p->warga->name,
             ] : null,
@@ -317,9 +309,10 @@ class VerifikasiPetugasController extends Controller
             ]),
         ];
 
+        // ✅ fix: ganti key 'user' jadi 'warga'
         if ($detail && $p->warga) {
-            $data['user']['email'] = $p->warga->email;
-            $data['user']['no_hp'] = $p->warga->no_hp;
+            $data['warga']['email'] = $p->warga->email;
+            $data['warga']['no_hp'] = $p->warga->no_hp;
         }
 
         return $data;
