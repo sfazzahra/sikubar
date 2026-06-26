@@ -7,8 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart'; // ← tambah ini
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.110.67:8000/api';
-  static const String storageBaseUrl = 'http://192.168.110.67:8000';
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String storageBaseUrl = 'http://127.0.0.1:8000';
 
   // ─── HELPER: ambil token tersimpan ───────────────────────────────────────
   Future<String?> _getToken() async {

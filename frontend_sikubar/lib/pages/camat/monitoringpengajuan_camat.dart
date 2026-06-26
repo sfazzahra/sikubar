@@ -45,7 +45,11 @@ IconData statusIcon(String status) {
 }
 
 class MonitoringPengajuanCamatPage extends StatefulWidget {
-  const MonitoringPengajuanCamatPage({super.key});
+  /// Jika diisi (misalnya dari notifikasi), detail pengajuan dengan id ini
+  /// akan otomatis terbuka begitu data selesai dimuat.
+  final int? initialPengajuanId;
+
+  const MonitoringPengajuanCamatPage({super.key, this.initialPengajuanId});
 
   @override
   State<MonitoringPengajuanCamatPage> createState() =>
@@ -82,6 +86,19 @@ class _MonitoringPengajuanCamatPageState
         allData = res['data'] ?? [];
         isLoading = false;
       });
+
+      // Dibuka dari notifikasi → cari item terkait lalu tampilkan detailnya.
+      if (widget.initialPengajuanId != null) {
+        final target = allData.firstWhere(
+          (e) => e['id'] == widget.initialPengajuanId,
+          orElse: () => null,
+        );
+        if (target != null && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showDetail(target);
+          });
+        }
+      }
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {

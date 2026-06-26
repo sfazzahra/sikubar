@@ -12,6 +12,10 @@ import '../../widgets/app_scaffold.dart';
 // ─── Design tokens (selaras dengan halaman Verifikasi & Pengaduan) ───
 const Color _kPrimary = Color(0xFF2F80ED);
 const Color _kPrimaryDark = Color(0xFF1B5FC4);
+const Color _kGreen = Color(0xFF10B981);
+const Color _kOrange = Color(0xFFF59E0B);
+const Color _kRed = Color(0xFFEF4444);
+const Color _kGrey = Color(0xFF94A3B8);
 
 class MonitoringPetugasPage extends StatefulWidget {
   const MonitoringPetugasPage({super.key});
@@ -582,74 +586,31 @@ class _MonitoringPetugasPageState extends State<MonitoringPetugasPage> {
       ],
       body: Column(
         children: [
-          // ── FILTER STATUS + PERIODE (frosted glass) ──
+          // ── FILTER STATUS + PERIODE (frosted glass, selaras dgn Pengaduan) ──
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(26),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
-                  padding: const EdgeInsets.all(6),
+                  height: 56,
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(26),
                     border: Border.all(color: Colors.white.withOpacity(0.22)),
                   ),
                   child: Row(
                     children: [
                       Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: filterOptions.map((f) => _buildFilterChip(f)).toList(),
-                          ),
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: filterOptions.map((f) => _buildFilterChip(f)).toList(),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: _showPeriodePicker,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                          decoration: BoxDecoration(
-                            gradient: periodeAktif
-                                ? const LinearGradient(colors: [_kPrimary, _kPrimaryDark])
-                                : null,
-                            color: periodeAktif ? null : Colors.transparent,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: periodeAktif
-                                ? [
-                                    BoxShadow(
-                                      color: _kPrimary.withOpacity(0.35),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.calendar_month_rounded,
-                                size: 14,
-                                color: periodeAktif ? Colors.white : Colors.white.withOpacity(0.85),
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                periodeAktif ? 'Periode' : 'Semua',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: periodeAktif ? Colors.white : Colors.white.withOpacity(0.85),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      const SizedBox(width: 4),
+                      _buildPeriodeButton(periodeAktif),
                     ],
                   ),
                 ),
@@ -657,154 +618,166 @@ class _MonitoringPetugasPageState extends State<MonitoringPetugasPage> {
             ),
           ),
 
-          // ── LABEL PERIODE AKTIF ──
-          if (periodeAktif)
+          // ── LABEL PERIODE AKTIF + TOTAL DATA (glass pill, selaras dgn Pengaduan) ──
+          if (periodeAktif || (!isLoading && dataMonitoring.isNotEmpty))
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.white.withOpacity(0.22)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.filter_alt_rounded, color: Colors.white, size: 14),
+                    Icon(
+                      periodeAktif ? Icons.filter_alt_rounded : Icons.fact_check_outlined,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _judulPeriode(),
+                        periodeAktif
+                            ? _judulPeriode()
+                            : '$totalData pengajuan ditemukan',
                         style: const TextStyle(
                             color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          tanggalMulai = null;
-                          tanggalAkhir = null;
-                        });
-                        _loadMonitoring(reset: true);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          shape: BoxShape.circle,
+                    if (periodeAktif)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            tanggalMulai = null;
+                            tanggalAkhir = null;
+                          });
+                          _loadMonitoring(reset: true);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close_rounded, color: Colors.white, size: 14),
                         ),
-                        child: const Icon(Icons.close_rounded, color: Colors.white, size: 14),
                       ),
-                    ),
                   ],
                 ),
               ),
             ),
 
-          // ── KONTEN ──
+          // ── KONTEN ── (langsung di atas background gradient, selaras dgn Pengaduan)
           Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(28),
-                  topRight: Radius.circular(28),
-                ),
-              ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
               child: isLoading
-                  ? const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 38,
-                            height: 38,
-                            child: CircularProgressIndicator(color: _kPrimary, strokeWidth: 3),
-                          ),
-                          SizedBox(height: 14),
-                          Text('Memuat data monitoring...',
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
-                        ],
-                      ),
-                    )
+                  ? _buildLoadingState()
                   : dataMonitoring.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 84,
-                                height: 84,
-                                decoration: BoxDecoration(
-                                  color: _kPrimary.withOpacity(0.07),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.inbox_rounded,
-                                    size: 36, color: _kPrimary.withOpacity(0.5)),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Tidak ada data pengajuan',
-                                style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14.5),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Coba ubah filter atau periode laporan',
-                                style: TextStyle(color: Colors.grey.shade400, fontSize: 12.5),
-                              ),
-                            ],
-                          ),
-                        )
+                      ? _buildEmptyState()
                       : RefreshIndicator(
+                          key: ValueKey('list-$selectedFilter-$tanggalMulai-$tanggalAkhir'),
                           color: _kPrimary,
+                          backgroundColor: Colors.white,
                           onRefresh: () => _loadMonitoring(reset: true),
-                          child: Column(
-                            children: [
-                              // Info total
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 5),
-                                      decoration: BoxDecoration(
-                                        color: _kPrimary.withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        '$totalData pengajuan ditemukan',
-                                        style: const TextStyle(
-                                          fontSize: 11.5,
-                                          color: _kPrimary,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                                  itemCount: dataMonitoring.length +
-                                      (currentPage < lastPage ? 1 : 0),
-                                  itemBuilder: (context, index) {
-                                    if (index == dataMonitoring.length) {
-                                      return _buildLoadMore();
-                                    }
-                                    return _buildCard(dataMonitoring[index]);
-                                  },
-                                ),
-                              ),
-                            ],
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                            itemCount: dataMonitoring.length +
+                                (currentPage < lastPage ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == dataMonitoring.length) {
+                                return _buildLoadMore();
+                              }
+                              return _buildCard(dataMonitoring[index]);
+                            },
                           ),
                         ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeriodeButton(bool periodeAktif) {
+    return GestureDetector(
+      onTap: _showPeriodePicker,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: periodeAktif
+              ? const LinearGradient(colors: [_kPrimary, _kPrimaryDark])
+              : null,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: periodeAktif
+              ? [BoxShadow(color: _kPrimary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_month_rounded, size: 14,
+                color: periodeAktif ? Colors.white : Colors.white.withOpacity(0.85)),
+            const SizedBox(width: 6),
+            Text(periodeAktif ? 'PERIODE' : 'SEMUA',
+                style: TextStyle(
+                    color: periodeAktif ? Colors.white : Colors.white.withOpacity(0.85),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11.5)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      key: ValueKey('loading'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+          ),
+          SizedBox(height: 16),
+          Text('Memuat data monitoring...',
+              style: TextStyle(color: Colors.white70, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      key: const ValueKey('empty'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.inbox_rounded, size: 38, color: Colors.white),
+          ),
+          const SizedBox(height: 18),
+          const Text("Tidak ada data pengajuan",
+              style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15.5)),
+          const SizedBox(height: 6),
+          Text("Coba ubah filter status\natau periode laporan",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12.5)),
         ],
       ),
     );
@@ -820,35 +793,30 @@ class _MonitoringPetugasPageState extends State<MonitoringPetugasPage> {
         _loadMonitoring(reset: true);
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          gradient: isActive ? const LinearGradient(colors: [_kPrimary, _kPrimaryDark]) : null,
-          borderRadius: BorderRadius.circular(18),
+          gradient: isActive
+              ? const LinearGradient(colors: [_kPrimary, _kPrimaryDark])
+              : null,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: _kPrimary.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
+              ? [BoxShadow(color: _kPrimary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))]
               : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: isActive ? Colors.white : Colors.white.withOpacity(0.85)),
-            const SizedBox(width: 5),
-            Text(
-              text,
-              style: TextStyle(
-                color: isActive ? Colors.white : Colors.white.withOpacity(0.85),
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                fontSize: 11.5,
-              ),
-            ),
+            Icon(icon, size: 14,
+                color: isActive ? Colors.white : Colors.white.withOpacity(0.85)),
+            const SizedBox(width: 6),
+            Text(text.toUpperCase(),
+                style: TextStyle(
+                    color: isActive ? Colors.white : Colors.white.withOpacity(0.85),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11.5)),
           ],
         ),
       ),
@@ -883,121 +851,152 @@ class _MonitoringPetugasPageState extends State<MonitoringPetugasPage> {
     }
   }
 
+  // ─── CARD (mengikuti struktur card Pengaduan: strip warna, icon 48x48,
+  // kotak konten abu-abu, lalu baris pill status + info + tanggal) ──────────
   Widget _buildCard(Map item) {
-    final status = item['status'] ?? '-';
+    final status = (item['status'] ?? '-').toString();
     final color = _getStatusColor(status);
-    final hasKeterangan = item['keterangan'] != null && item['keterangan'] != '-';
+    final icon = _getStatusIcon(status);
+    final hasKeterangan =
+        item['keterangan'] != null && item['keterangan'].toString().trim().isNotEmpty && item['keterangan'] != '-';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 22, offset: const Offset(0, 10)),
         ],
       ),
-      child: Row(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 46,
-            height: 46,
+            height: 4,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color.withOpacity(0.85), color],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
+              gradient: LinearGradient(colors: [color.withOpacity(0.55), color]),
             ),
-            child: Icon(_getStatusIcon(status), color: Colors.white, size: 20),
           ),
-          const SizedBox(width: 14),
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item['nama'] ?? '-',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF1A2E4A),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  item['jenis'] ?? '-',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.confirmation_number_outlined,
-                        size: 11, color: Colors.grey.shade400),
-                    const SizedBox(width: 4),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [color.withOpacity(0.85), color],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 14),
                     Expanded(
-                      child: Text(
-                        item['nomor_pengajuan'] ?? '-',
-                        style: const TextStyle(fontSize: 11, color: Color(0xFFB0BEC5)),
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item['nama'] ?? '-',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 2),
+                          Text(item['jenis'] ?? '-',
+                              style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ],
                       ),
                     ),
+                    Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
                   ],
                 ),
-                if (hasKeterangan) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      item['keterangan'],
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                ],
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.confirmation_number_outlined, size: 14, color: Colors.grey.shade400),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          hasKeterangan ? item['keterangan'] : (item['nomor_pengajuan'] ?? '-'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 12.5, color: Colors.grey.shade700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(icon, size: 13, color: color),
+                          const SizedBox(width: 6),
+                          Text(status.toUpperCase(),
+                              style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                    if (hasKeterangan) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.confirmation_number_outlined, size: 12, color: Colors.grey.shade500),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                item['nomor_pengajuan'] ?? '-',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: Colors.grey.shade600, fontSize: 10.5, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const Spacer(),
+                    Icon(Icons.event_outlined, size: 13, color: Colors.grey.shade400),
+                    const SizedBox(width: 4),
+                    Text(item['tanggal'] ?? '-',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  ],
+                ),
               ],
             ),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                item['tanggal'] ?? '-',
-                style: const TextStyle(fontSize: 10.5, color: Color(0xFFB0BEC5)),
-              ),
-            ],
           ),
         ],
       ),
@@ -1006,19 +1005,26 @@ class _MonitoringPetugasPageState extends State<MonitoringPetugasPage> {
 
   Widget _buildLoadMore() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Center(
         child: Material(
-          color: _kPrimary.withOpacity(0.08),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(30),
+          elevation: 0,
           child: InkWell(
             borderRadius: BorderRadius.circular(30),
             onTap: () {
               setState(() => currentPage++);
               _loadMonitoring();
             },
-            child: Padding(
+            child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 6)),
+                ],
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1041,28 +1047,13 @@ class _MonitoringPetugasPageState extends State<MonitoringPetugasPage> {
       case 'diproses':
       case 'diverifikasi':
       case 'diteruskan':
-        return const Color(0xFFF97316);
+        return _kOrange;
       case 'selesai':
-        return const Color(0xFF22C55E);
+        return _kGreen;
       case 'ditolak':
-        return const Color(0xFFEF4444);
+        return _kRed;
       default:
-        return const Color(0xFF94A3B8);
-    }
-  }
-
-  Color _getStatusBgColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'diproses':
-      case 'diverifikasi':
-      case 'diteruskan':
-        return const Color(0xFFFFF7ED);
-      case 'selesai':
-        return const Color(0xFFF0FDF4);
-      case 'ditolak':
-        return const Color(0xFFFEF2F2);
-      default:
-        return const Color(0xFFF1F5F9);
+        return _kGrey;
     }
   }
 }

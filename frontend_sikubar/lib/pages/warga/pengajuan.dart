@@ -7,7 +7,11 @@ import '../../widgets/app_scaffold.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PengajuanPage extends StatefulWidget {
-  const PengajuanPage({super.key});
+  /// Jika diisi (misalnya dari notifikasi), detail pengajuan dengan id ini
+  /// akan otomatis terbuka begitu data selesai dimuat.
+  final int? initialPengajuanId;
+
+  const PengajuanPage({super.key, this.initialPengajuanId});
 
   @override
   State<PengajuanPage> createState() => _PengajuanPageState();
@@ -66,6 +70,20 @@ class _PengajuanPageState extends State<PengajuanPage> {
           return status != 'selesai' && status != 'ditolak';
         }).toList();
       });
+
+      // Dibuka dari notifikasi → cari item terkait (dari seluruh riwayat,
+      // termasuk yang sudah selesai/ditolak) lalu tampilkan detailnya.
+      if (widget.initialPengajuanId != null) {
+        final target = semua.firstWhere(
+          (e) => e['id'] == widget.initialPengajuanId,
+          orElse: () => {},
+        );
+        if (target.isNotEmpty && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showDetailPengajuan(target);
+          });
+        }
+      }
     } catch (_) {
     } finally {
       setState(() => isLoadingPengajuan = false);
@@ -612,34 +630,66 @@ class _PengajuanPageState extends State<PengajuanPage> {
         const SizedBox(height: 20),
 
         // ── TOMBOL AJUKAN ─────────────────────────────────────────
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [_blue, _darkBlue]),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: _blue.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 5)),
+Container(
+  width: double.infinity,
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color(0xFF10B981),
+        Color(0xFF059669),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(16),
+    boxShadow: [
+      BoxShadow(
+        color: Color.fromARGB(255, 133, 216, 170),
+        blurRadius: 14,
+        offset: Offset(0, 6),
+      ),
+    ],
+  ),
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+    onPressed: isSending ? null : _ajukan,
+    child: isSending
+        ? const SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          )
+        : const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.send_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Ajukan Sekarang',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
             ],
           ),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-            onPressed: isSending ? null : _ajukan,
-            child: isSending
-                ? const SizedBox(height: 20, width: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.send_rounded, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Text('Ajukan Sekarang',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                  ]),
-          ),
-        ),
-
+  ),
+),
         const SizedBox(height: 16),
       ]),
     );

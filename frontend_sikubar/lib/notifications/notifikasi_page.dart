@@ -1,11 +1,141 @@
 import 'package:flutter/material.dart';
 import 'notification_service.dart';
+import '../services/api_service.dart';
+import '../pages/petugas/verifikasipetugas.dart';
+import '../pages/petugas/pengaduan_petugas.dart';
+import '../pages/kasi/validasikasi.dart';
+import '../pages/camat/monitoringpengajuan_camat.dart';
+import '../pages/warga/pengajuan.dart';
+import '../pages/warga/pengaduan.dart';
+import '../pages/warga/riwayat.dart';
 
 class NotifikasiPage extends StatefulWidget {
   const NotifikasiPage({super.key});
 
   @override
   State<NotifikasiPage> createState() => _NotifikasiPageState();
+}
+
+/// Ambil id pengajuan/pengaduan dari payload notif.data.
+/// Backend mengirim key 'pengajuan_id' untuk tipe pengajuan dan
+/// 'pengaduan_id' untuk tipe pengaduan.
+int? _extractTargetId(AppNotification notif) {
+  final data = notif.data;
+  if (data == null) return null;
+  final raw = data['pengajuan_id'] ?? data['pengaduan_id'] ?? data['id'];
+  if (raw == null) return null;
+  if (raw is int) return raw;
+  return int.tryParse(raw.toString());
+}
+
+/// Deteksi role user yang sedang login dengan mencoba endpoint profile
+/// masing-masing role secara berurutan menggunakan token yang sudah ada.
+/// Tidak bergantung pada SharedPreferences selain auth_token, jadi tetap
+/// jalan walau 'user_data'/'user_role' tidak tersimpan.
+Future<String?> _detectCurrentRole() async {
+  final api = ApiService();
+
+  try {
+    final res = await api.getProfilPetugas();
+    debugPrint('[NOTIF] getProfilPetugas SUKSES: $res');
+    return 'petugas';
+  } catch (e) {
+    debugPrint('[NOTIF] getProfilPetugas gagal: $e');
+  }
+
+  try {
+    final res = await api.getProfilKasi();
+    debugPrint('[NOTIF] getProfilKasi SUKSES: $res');
+    return 'kasi';
+  } catch (e) {
+    debugPrint('[NOTIF] getProfilKasi gagal: $e');
+  }
+
+  try {
+    final res = await api.getProfilCamat();
+    debugPrint('[NOTIF] getProfilCamat SUKSES: $res');
+    return 'camat';
+  } catch (e) {
+    debugPrint('[NOTIF] getProfilCamat gagal: $e');
+  }
+
+  try {
+    final res = await api.getProfil(); // warga
+    debugPrint('[NOTIF] getProfil (warga) SUKSES: $res');
+    return 'warga';
+  } catch (e) {
+    debugPrint('[NOTIF] getProfil (warga) gagal: $e');
+  }
+
+  debugPrint('[NOTIF] semua percobaan deteksi role GAGAL');
+  return null;
+}
+
+/// Tentukan halaman tujuan berdasarkan role aktor saat ini dan tipe notifikasi,
+/// lalu pindah ke sana. Dipanggil saat notifikasi ditekan.
+Future<void> _bukaHalamanTerkaitNotifikasi(
+    BuildContext context, AppNotification notif) async {
+  final role = await _detectCurrentRole();
+  final id = _extractTargetId(notif);
+
+  if (!context.mounted) return;
+
+  if (id == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Detail untuk notifikasi ini tidak tersedia')),
+    );
+    return;
+  }
+
+  Widget? target;
+
+  switch (role) {
+    case 'petugas':
+      target = notif.tipe == 'pengaduan'
+          ? PengaduanPetugasPage(initialPengaduanId: id)
+          : VerifikasiPetugasPage(initialPengajuanId: id);
+      break;
+
+    case 'kasi':
+      if (notif.tipe == 'pengajuan') {
+        target = ValidasiKasiPage(initialPengajuanId: id);
+      }
+      break;
+
+    case 'camat':
+      if (notif.tipe == 'pengajuan') {
+        target = MonitoringPengajuanCamatPage(initialPengajuanId: id);
+      }
+      break;
+
+    case 'warga':
+      if (notif.tipe == 'pengaduan') {
+        target = PengaduanPage(initialPengaduanId: id);
+        break;
+      }
+
+      // tipe == 'pengajuan' → cek konteks dari judul notif
+      final judul = notif.judul.toLowerCase();
+      if (judul.contains('ditolak')) {
+        // Pengajuan ditolak → arahkan ke form supaya warga bisa ajukan ulang.
+        target = const PengajuanPage();
+      } else if (judul.contains('disetujui') || judul.contains('sudah siap')) {
+        // Pengajuan disetujui / surat sudah selesai → arahkan ke riwayat.
+        target = const RiwayatPage();
+      } else {
+        // Status lain (diproses, dll) → tetap buka detail seperti biasa.
+        target = PengajuanPage(initialPengajuanId: id);
+      }
+      break;
+  }
+
+  if (target == null) {
+    // Tipe notifikasi belum ada halaman tujuan untuk role ini, atau role
+    // tidak terdeteksi (token expired/invalid).
+    return;
+  }
+
+  Navigator.push(context, MaterialPageRoute(builder: (_) => target!));
 }
 
 class _NotifikasiPageState extends State<NotifikasiPage> {
@@ -128,6 +258,9 @@ class _NotifikasiCard extends StatelessWidget {
       onTap: () async {
         if (isUnread) {
           await NotificationService.instance.tandaiDibaca(notif.id);
+        }
+        if (context.mounted) {
+          await _bukaHalamanTerkaitNotifikasi(context, notif);
         }
       },
       child: AnimatedContainer(

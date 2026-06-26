@@ -64,8 +64,6 @@ void initState() {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _banner(),
-            const SizedBox(height: 16),
-            _quickStats(),
             const SizedBox(height: 24),
             _sectionTitle('Tentang Kecamatan', Icons.info_rounded),
             const SizedBox(height: 12),
@@ -159,60 +157,6 @@ void initState() {
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── QUICK STATS ────────────────────────────────────────────────────────────
-  static Widget _quickStats() {
-    return Row(
-      children: [
-        _quickStatItem('19.405', 'Penduduk', Icons.people_alt_rounded,
-            kPrimary, const Color(0xFFEFF6FF)),
-        const SizedBox(width: 10),
-        _quickStatItem('5', 'Wilayah', Icons.map_rounded,
-            kTeal, const Color(0xFFF0FDFA)),
-        const SizedBox(width: 10),
-        _quickStatItem('271,51', 'Km²', Icons.terrain_rounded,
-            kOrange, const Color(0xFFFFF7ED)),
-      ],
-    );
-  }
-
-  static Widget _quickStatItem(
-      String value, String label, IconData icon, Color color, Color bgColor) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                  color: bgColor, borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: color, size: 18),
-            ),
-            const SizedBox(height: 8),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-            const SizedBox(height: 2),
-            Text(label,
-                style:
-                    const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
           ],
         ),
       ),

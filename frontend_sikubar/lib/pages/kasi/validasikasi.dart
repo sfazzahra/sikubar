@@ -53,7 +53,11 @@ IconData statusIcon(String status) {
 }
 
 class ValidasiKasiPage extends StatefulWidget {
-  const ValidasiKasiPage({super.key});
+  /// Jika diisi (misalnya dari notifikasi), detail pengajuan dengan id ini
+  /// akan otomatis terbuka begitu data selesai dimuat.
+  final int? initialPengajuanId;
+
+  const ValidasiKasiPage({super.key, this.initialPengajuanId});
 
   @override
   State<ValidasiKasiPage> createState() => _ValidasiKasiPageState();
@@ -99,6 +103,19 @@ class _ValidasiKasiPageState extends State<ValidasiKasiPage> {
       }
 
       _filterData();
+
+      // Dibuka dari notifikasi → cari item terkait lalu tampilkan detailnya.
+      if (widget.initialPengajuanId != null) {
+        final target = allPengajuan.firstWhere(
+          (e) => e['id'] == widget.initialPengajuanId,
+          orElse: () => {},
+        );
+        if (target.isNotEmpty && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showDetailSheet(target);
+          });
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

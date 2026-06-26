@@ -12,7 +12,11 @@ const Color _kOrange = Color(0xFFF59E0B);
 const Color _kGrey = Color(0xFF94A3B8);
 
 class PengaduanPetugasPage extends StatefulWidget {
-  const PengaduanPetugasPage({super.key});
+  /// Jika diisi (misalnya dari notifikasi), detail pengaduan dengan id ini
+  /// akan otomatis terbuka begitu data selesai dimuat.
+  final int? initialPengaduanId;
+
+  const PengaduanPetugasPage({super.key, this.initialPengaduanId});
 
   @override
   State<PengaduanPetugasPage> createState() => _PengaduanPetugasPageState();
@@ -43,6 +47,19 @@ class _PengaduanPetugasPageState extends State<PengaduanPetugasPage> {
         dataPengaduan = res['data'];
         isLoading = false;
       });
+
+      // Dibuka dari notifikasi → cari item terkait lalu tampilkan detailnya.
+      if (widget.initialPengaduanId != null) {
+        final target = dataPengaduan.firstWhere(
+          (e) => e['id'] == widget.initialPengaduanId,
+          orElse: () => null,
+        );
+        if (target != null && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showDetail(target);
+          });
+        }
+      }
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {

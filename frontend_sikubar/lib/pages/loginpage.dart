@@ -53,9 +53,9 @@ class _LoginPageState extends State<LoginPage> {
       String endpoint;
 
       if (selectedRole == 'warga') {
-        endpoint = "http://192.168.110.67:8000/api/warga/login";
+        endpoint = "http://127.0.0.1:8000/api/warga/login";
       } else {
-        endpoint = "http://192.168.110.67:8000/api/staff/login";
+        endpoint = "http://127.0.0.1:8000/api/staff/login";
       }
 
       final response = await http.post(

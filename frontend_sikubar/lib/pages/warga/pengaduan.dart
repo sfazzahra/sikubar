@@ -7,7 +7,11 @@ import '../../widgets/app_scaffold.dart';
 import '../../widgets/bottom_menuwarga.dart';
 
 class PengaduanPage extends StatefulWidget {
-  const PengaduanPage({super.key});
+  /// Jika diisi (misalnya dari notifikasi), detail pengaduan dengan id ini
+  /// akan otomatis terbuka begitu data selesai dimuat.
+  final int? initialPengaduanId;
+
+  const PengaduanPage({super.key, this.initialPengaduanId});
 
   @override
   State<PengaduanPage> createState() => _PengaduanPageState();
@@ -51,6 +55,19 @@ class _PengaduanPageState extends State<PengaduanPage> {
       setState(() {
         pengaduanList = List<Map<String, dynamic>>.from(res['data']['data'] ?? []);
       });
+
+      // Dibuka dari notifikasi → cari item terkait lalu tampilkan detailnya.
+      if (widget.initialPengaduanId != null) {
+        final target = pengaduanList.firstWhere(
+          (e) => e['id'] == widget.initialPengaduanId,
+          orElse: () => {},
+        );
+        if (target.isNotEmpty && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showDetail(context, target);
+          });
+        }
+      }
     } catch (_) {
     } finally {
       setState(() => isLoading = false);
@@ -248,33 +265,67 @@ class _PengaduanPageState extends State<PengaduanPage> {
         const SizedBox(height: 20),
 
         // ── TOMBOL KIRIM ──────────────────────────────────────────
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [_blue, _darkBlue]),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: _blue.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 5)),
+// ── TOMBOL KIRIM ──────────────────────────────────────────
+Container(
+  width: double.infinity,
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+         Color(0xFF10B981),
+        Color(0xFF059669),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(16),
+    boxShadow: const [
+      BoxShadow(
+        color: Color.fromARGB(255, 133, 216, 170),
+        blurRadius: 14,
+        offset: Offset(0, 6),
+      ),
+    ],
+  ),
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+    onPressed: isSending ? null : _kirim,
+    child: isSending
+        ? const SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          )
+        : const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.send_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Kirim Pengaduan',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
             ],
           ),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-            onPressed: isSending ? null : _kirim,
-            child: isSending
-                ? const SizedBox(height: 20, width: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.send_rounded, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Text('Kirim Pengaduan',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                  ]),
-          ),
-        ),
+  ),
+),
 
         const SizedBox(height: 16),
       ]),

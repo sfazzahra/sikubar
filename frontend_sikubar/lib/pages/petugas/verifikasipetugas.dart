@@ -54,7 +54,11 @@ IconData statusIcon(String status) {
 }
 
 class VerifikasiPetugasPage extends StatefulWidget {
-  const VerifikasiPetugasPage({super.key});
+  /// Jika diisi (misalnya dari notifikasi), detail pengajuan dengan id ini
+  /// akan otomatis terbuka begitu halaman ini ditampilkan.
+  final int? initialPengajuanId;
+
+  const VerifikasiPetugasPage({super.key, this.initialPengajuanId});
 
   @override
   State<VerifikasiPetugasPage> createState() => _VerifikasiPetugasPageState();
@@ -83,6 +87,15 @@ class _VerifikasiPetugasPageState extends State<VerifikasiPetugasPage> {
   void initState() {
     super.initState();
     _loadPengajuan();
+
+    // Dibuka dari notifikasi → langsung tampilkan detail pengajuan terkait.
+    if (widget.initialPengajuanId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showDetailSheet({'id': widget.initialPengajuanId});
+        }
+      });
+    }
   }
 
   Future<void> _loadPengajuan({bool reset = false}) async {
@@ -287,7 +300,7 @@ class _VerifikasiPetugasPageState extends State<VerifikasiPetugasPage> {
                     child: Column(
                       children: [
                         _uploadInfoRow(Icons.person_outline, "Nama",
-                            item['user']?['nama'] ?? '-'),
+                            item['warga']?['nama'] ?? '-'),
                         const SizedBox(height: 10),
                         _uploadInfoRow(Icons.description_outlined, "Jenis Surat",
                             item['jenis_surat']?['nama'] ?? '-'),
