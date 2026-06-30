@@ -18,6 +18,10 @@ class AppScaffold extends StatelessWidget {
     this.actions,
   });
 
+  static const Color primaryDark = Color(0xFF0B2B5C);
+  static const Color primary = Color(0xFF1C4FA1);
+  static const Color primaryLight = Color(0xFF2F80ED);
+
   @override
   Widget build(BuildContext context) {
     final canPop = showBack ?? Navigator.canPop(context);
@@ -25,27 +29,74 @@ class AppScaffold extends StatelessWidget {
     return Scaffold(
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: bottomNavigationBar,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            
-            colors: [Color(0xFF2F80ED), Color(0xFF1C4FA1)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _AppHeader(
-                title: title,
-                canPop: canPop,
-                actions: actions,
+      body: Stack(
+        children: [
+          // ── BACKGROUND sama seperti login ──
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [primaryDark, primary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-              Expanded(child: body),
-            ],
+            ),
           ),
-        ),
+          // Shape geometris kanan atas
+          Positioned(
+            top: -120,
+            right: -90,
+            child: Transform.rotate(
+              angle: 0.5,
+              child: Container(
+                width: 320,
+                height: 320,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(60),
+                  gradient: LinearGradient(
+                    colors: [
+                      primaryLight.withOpacity(0.35),
+                      primaryLight.withOpacity(0.0),
+                    ],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Lingkaran outline kiri bawah
+          Positioned(
+            bottom: -140,
+            left: -100,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.06),
+                  width: 40,
+                ),
+              ),
+            ),
+          ),
+
+          // ── KONTEN UTAMA ──
+          SafeArea(
+            child: Column(
+              children: [
+                _AppHeader(
+                  title: title,
+                  canPop: canPop,
+                  actions: actions,
+                ),
+                Expanded(child: body),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -65,10 +116,9 @@ class _AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 110, // sebelumnya 90
+      height: 110,
       child: Stack(
         children: [
-          // Tombol back
           if (canPop)
             Positioned(
               left: 16,
@@ -93,7 +143,6 @@ class _AppHeader extends StatelessWidget {
               ),
             ),
 
-          // Logo dan judul
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -104,9 +153,7 @@ class _AppHeader extends StatelessWidget {
                   width: 80,
                   fit: BoxFit.contain,
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   title,
                   style: const TextStyle(
@@ -121,7 +168,6 @@ class _AppHeader extends StatelessWidget {
             ),
           ),
 
-          // Actions kanan
           if (actions != null && actions!.isNotEmpty)
             Positioned(
               right: 12,

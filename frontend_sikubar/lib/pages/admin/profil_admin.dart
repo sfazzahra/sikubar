@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TAB 3 — PROFIL ADMIN
+// TAB 3 — PROFIL ADMIN — background putih, AppBar & TabBar tetap dari AdminPage
 // ══════════════════════════════════════════════════════════════════════════════
 class AdminProfilTab extends StatefulWidget {
   const AdminProfilTab({super.key});
@@ -17,10 +17,11 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
   Map<String, dynamic>? profil;
   bool isLoading = true;
 
-  static const Color _kPrimary     = Color(0xFF2F80ED);
+  static const Color _kPrimary = Color(0xFF2F80ED);
   static const Color _kPrimaryDark = Color(0xFF1B5FC4);
-  static const Color _kIconBg      = Color(0xFFEAF4FF);
-  static const Color _kTextDark    = Color(0xFF1B2433);
+  static const Color _kIconBg = Color(0xFFEAF4FF);
+  static const Color _kTextDark = Color(0xFF1B2433);
+  static const Color _kBg = Color(0xFFF5F7FB);
 
   String _str(String key) => profil![key]?.toString() ?? '-';
 
@@ -48,20 +49,21 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
       String nama, String email, String noHp, String alamat) async {
     try {
       final res = await _api.updateProfilAdmin({
-        'name'  : nama,
-        'email' : email,
-        'no_hp' : noHp,
+        'name': nama,
+        'email': email,
+        'no_hp': noHp,
         'alamat': alamat,
       });
       setState(() => profil = res['data']);
       _snack('Profil berhasil diperbarui.');
     } on ApiException catch (e) {
       _snack(e.message, isError: true);
+    } catch (_) {
+      _snack('Gagal memperbarui profil.', isError: true);
     }
   }
 
-  Future<void> _gantiPassword(
-      String lama, String baru, String konf) async {
+  Future<void> _gantiPassword(String lama, String baru, String konf) async {
     if (baru != konf) {
       _snack('Konfirmasi password tidak cocok.', isError: true);
       return;
@@ -91,70 +93,76 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(
-          child: CircularProgressIndicator(color: _kPrimary));
-    }
-    if (profil == null) {
-      return const Center(
-          child: Text('Gagal memuat profil.',
-              style: TextStyle(color: Colors.grey)));
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 32),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _profileSummaryCard(),
-          ),
-          const SizedBox(height: 22),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                _sectionLabel('Informasi Pribadi'),
-                const SizedBox(height: 10),
-                _infoCard([
-                  _infoRow(Icons.person_outline,      'Nama Lengkap', _str('name')),
-                  _divider(),
-                  _infoRow(Icons.email_outlined,      'Email',        _str('email')),
-                  _divider(),
-                  _infoRow(Icons.phone_outlined,      'No HP',        _str('no_hp')),
-                  _divider(),
-                  _infoRow(Icons.location_on_outlined,'Alamat',       _str('alamat')),
-                ]),
-                const SizedBox(height: 24),
-                _sectionLabel('Pengaturan Akun'),
-                const SizedBox(height: 10),
-                _settingsCard([
-                  _settingsRow(
-                    icon: Icons.edit_outlined,
-                    label: 'Edit Profil',
-                    onTap: _showEditModal,
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: _kBg,
+      child: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: _kPrimary))
+          : profil == null
+              ? const Center(
+                  child: Text('Gagal memuat profil.',
+                      style: TextStyle(color: Colors.black54)))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _profileSummaryCard(),
+                      ),
+                      const SizedBox(height: 22),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            _sectionLabel('Informasi Pribadi'),
+                            const SizedBox(height: 10),
+                            _infoCard([
+                              _infoRow(Icons.person_outline, 'Nama Lengkap',
+                                  _str('name')),
+                              _divider(),
+                              _infoRow(
+                                  Icons.email_outlined, 'Email', _str('email')),
+                              _divider(),
+                              _infoRow(
+                                  Icons.phone_outlined, 'No HP', _str('no_hp')),
+                              _divider(),
+                              _infoRow(Icons.location_on_outlined, 'Alamat',
+                                  _str('alamat')),
+                            ]),
+                            const SizedBox(height: 24),
+                            _sectionLabel('Pengaturan Akun'),
+                            const SizedBox(height: 10),
+                            _settingsCard([
+                              _settingsRow(
+                                icon: Icons.edit_outlined,
+                                label: 'Edit Profil',
+                                onTap: _showEditModal,
+                              ),
+                              _divider(),
+                              _settingsRow(
+                                icon: Icons.lock_outline,
+                                label: 'Ganti Password',
+                                onTap: _showPasswordModal,
+                              ),
+                            ]),
+                            const SizedBox(height: 24),
+                            _logoutButton(),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  _divider(),
-                  _settingsRow(
-                    icon: Icons.lock_outline,
-                    label: 'Ganti Password',
-                    onTap: _showPasswordModal,
-                  ),
-                ]),
-                const SizedBox(height: 24),
-                _logoutButton(),
-              ],
-            ),
-          ),
-        ],
-      ),
+                ),
     );
   }
 
   // ─── PROFILE SUMMARY CARD ───────────────────────────────────────────────────
   Widget _profileSummaryCard() {
-    final name    = profil!['name']?.toString() ?? '-';
+    final name = profil!['name']?.toString() ?? '-';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
     return Container(
@@ -165,7 +173,7 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -211,8 +219,8 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
                 ),
                 const SizedBox(height: 5),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: _kIconBg,
                     borderRadius: BorderRadius.circular(20),
@@ -241,14 +249,14 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
     );
   }
 
-  // ─── SECTION LABEL ──────────────────────────────────────────────────────────
+  // ─── SECTION LABEL (gelap, karena background tab sekarang putih) ──────────
   Widget _sectionLabel(String text) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         text.toUpperCase(),
-        style: const TextStyle(
-          color: Color(0xFF64748B),
+        style: TextStyle(
+          color: Colors.grey.shade600,
           fontSize: 11.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.6,
@@ -257,7 +265,6 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
     );
   }
 
-  // ─── INFO CARD ──────────────────────────────────────────────────────────────
   Widget _infoCard(List<Widget> children) {
     return Container(
       width: double.infinity,
@@ -266,7 +273,7 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -313,7 +320,6 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
     );
   }
 
-  // ─── SETTINGS CARD ──────────────────────────────────────────────────────────
   Widget _settingsCard(List<Widget> children) {
     return Container(
       width: double.infinity,
@@ -322,7 +328,7 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -379,7 +385,6 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
         color: Colors.grey.shade100,
       );
 
-  // ─── LOGOUT BUTTON ──────────────────────────────────────────────────────────
   Widget _logoutButton() {
     return SizedBox(
       width: double.infinity,
@@ -388,68 +393,80 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.white,
           side: BorderSide(color: Colors.red.withOpacity(0.4)),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         onPressed: _showLogoutDialog,
         icon: const Icon(Icons.logout_rounded, color: Colors.red, size: 18),
         label: const Text('Logout',
             style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.w600,
-                fontSize: 14)),
+                color: Colors.red, fontWeight: FontWeight.w600, fontSize: 14)),
       ),
     );
   }
 
   // ─── MODAL: EDIT PROFIL ─────────────────────────────────────────────────────
   void _showEditModal() {
-    final namaCtrl   = TextEditingController(text: profil!['name']?.toString()   ?? '');
-    final emailCtrl  = TextEditingController(text: profil!['email']?.toString()  ?? '');
-    final hpCtrl     = TextEditingController(text: profil!['no_hp']?.toString()  ?? '');
+    final namaCtrl = TextEditingController(text: profil!['name']?.toString() ?? '');
+    final emailCtrl = TextEditingController(text: profil!['email']?.toString() ?? '');
+    final hpCtrl = TextEditingController(text: profil!['no_hp']?.toString() ?? '');
     final alamatCtrl = TextEditingController(text: profil!['alamat']?.toString() ?? '');
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        contentPadding: EdgeInsets.zero,
-        insetPadding:
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _modalHandle(),
-                const SizedBox(height: 20),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Edit Profil',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _kTextDark)),
-                ),
-                const SizedBox(height: 18),
-                _modalInput(namaCtrl,  'Nama Lengkap', Icons.person_outline),
-                const SizedBox(height: 12),
-                _modalInput(emailCtrl, 'Email', Icons.email_outlined,
-                    keyboardType: TextInputType.emailAddress),
-                const SizedBox(height: 12),
-                _modalInput(hpCtrl, 'No HP', Icons.phone_outlined,
-                    keyboardType: TextInputType.phone),
-                const SizedBox(height: 12),
-                _modalInput(alamatCtrl, 'Alamat', Icons.location_on_outlined),
-                const SizedBox(height: 22),
-                _modalSaveButton(() {
-                  Navigator.pop(ctx);
-                  _simpanProfil(namaCtrl.text, emailCtrl.text,
-                      hpCtrl.text, alamatCtrl.text);
-                }),
-              ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, _) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          contentPadding: EdgeInsets.zero,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _modalHandle(),
+                  const SizedBox(height: 20),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Edit Profil',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: _kTextDark)),
+                  ),
+                  const SizedBox(height: 18),
+                  _modalInput(namaCtrl, 'Nama Lengkap', Icons.person_outline),
+                  const SizedBox(height: 12),
+                  _modalInput(emailCtrl, 'Email', Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress),
+                  const SizedBox(height: 12),
+                  _modalInput(hpCtrl, 'No HP', Icons.phone_outlined,
+                      keyboardType: TextInputType.phone),
+                  const SizedBox(height: 12),
+                  _modalInput(alamatCtrl, 'Alamat', Icons.location_on_outlined),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: _kPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14))),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _simpanProfil(namaCtrl.text, emailCtrl.text,
+                            hpCtrl.text, alamatCtrl.text);
+                      },
+                      child: const Text('Simpan',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -465,40 +482,59 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        contentPadding: EdgeInsets.zero,
-        insetPadding:
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _modalHandle(),
-                const SizedBox(height: 20),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Ganti Password',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _kTextDark)),
-                ),
-                const SizedBox(height: 18),
-                _modalInput(lamaCtrl, 'Password Lama',           Icons.lock_outline, obscure: true),
-                const SizedBox(height: 12),
-                _modalInput(baruCtrl, 'Password Baru',           Icons.lock_outline, obscure: true),
-                const SizedBox(height: 12),
-                _modalInput(konfCtrl, 'Konfirmasi Password Baru',Icons.lock_outline, obscure: true),
-                const SizedBox(height: 22),
-                _modalSaveButton(() {
-                  Navigator.pop(ctx);
-                  _gantiPassword(lamaCtrl.text, baruCtrl.text, konfCtrl.text);
-                }),
-              ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, _) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          contentPadding: EdgeInsets.zero,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _modalHandle(),
+                  const SizedBox(height: 20),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Ganti Password',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: _kTextDark)),
+                  ),
+                  const SizedBox(height: 18),
+                  _modalInput(lamaCtrl, 'Password Lama', Icons.lock_outline,
+                      obscure: true),
+                  const SizedBox(height: 12),
+                  _modalInput(baruCtrl, 'Password Baru', Icons.lock_outline,
+                      obscure: true),
+                  const SizedBox(height: 12),
+                  _modalInput(
+                      konfCtrl, 'Konfirmasi Password Baru', Icons.lock_outline,
+                      obscure: true),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: _kPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14))),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _gantiPassword(lamaCtrl.text, baruCtrl.text, konfCtrl.text);
+                      },
+                      child: const Text('Simpan',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -506,7 +542,6 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
     );
   }
 
-  // ─── MODAL HELPERS ──────────────────────────────────────────────────────────
   Widget _modalHandle() {
     return Center(
       child: Container(
@@ -538,8 +573,7 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
         prefixIcon: Icon(icon, size: 19, color: Colors.grey.shade500),
         filled: true,
         fillColor: Colors.grey.shade50,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade200)),
@@ -554,32 +588,11 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
     );
   }
 
-  Widget _modalSaveButton(VoidCallback onTap) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _kPrimary,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)),
-        ),
-        onPressed: onTap,
-        child: const Text('Simpan',
-            style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
-      ),
-    );
-  }
-
-  // ─── DIALOG: LOGOUT ─────────────────────────────────────────────────────────
   void _showLogoutDialog() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text('Konfirmasi Logout',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         content: const Text('Apakah Anda yakin ingin logout?',
@@ -592,15 +605,13 @@ class _AdminProfilTabState extends State<AdminProfilTab> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
               Navigator.pop(context);
               _logout();
             },
-            child: const Text('Logout',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

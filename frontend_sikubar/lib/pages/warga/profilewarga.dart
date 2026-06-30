@@ -224,13 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  _str('email'),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                
               ],
             ),
           ),

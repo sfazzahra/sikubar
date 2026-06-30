@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TAB 2 — JENIS SURAT
+// TAB 2 — JENIS SURAT — background putih
 // ══════════════════════════════════════════════════════════════════════════════
 
 const Color _kPrimary     = Color(0xFF2F80ED);
-const Color _kPrimaryDark = Color(0xFF1B5FC4);
+const Color _kPrimaryDark = Color(0xFF1C4FA1);
 const Color _kBg          = Color(0xFFF5F7FB);
+const Color _kGradStart   = Color(0xFF0B2B5C);
+const Color _kGradEnd     = Color(0xFF1C4FA1);
 
 class AdminJenisSuratTab extends StatefulWidget {
   const AdminJenisSuratTab({super.key});
@@ -201,67 +203,78 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? const Center(child: CircularProgressIndicator(color: _kPrimary))
-        : SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: _kBg,
+      child: isLoading
+          ? const Center(child: CircularProgressIndicator(color: _kPrimary))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
 
-              // ── SUMMARY CARD ────────────────────────────────────────────
-              _summaryCard(),
-              const SizedBox(height: 20),
+                // ── SUMMARY CARD ────────────────────────────────────────────
+                _summaryCard(),
+                const SizedBox(height: 20),
 
-              // ── TOMBOL TAMBAH ────────────────────────────────────────────
-              _addButton(),
+                // ── TOMBOL TAMBAH ────────────────────────────────────────────
+                _addButton(),
 
-              // ── FORM ─────────────────────────────────────────────────────
-              if (showForm) ...[
-                const SizedBox(height: 16),
-                _buildForm(),
-              ],
+                // ── FORM ─────────────────────────────────────────────────────
+                if (showForm) ...[
+                  const SizedBox(height: 16),
+                  _buildForm(),
+                ],
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // ── HEADER DAFTAR ─────────────────────────────────────────────
-              Row(children: [
-                Container(
-                  width: 4, height: 20,
-                  decoration: BoxDecoration(
-                      color: _kPrimary, borderRadius: BorderRadius.circular(4)),
-                ),
-                const SizedBox(width: 10),
-                const Text('Daftar Jenis Surat',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B2433))),
-                const Spacer(),
-                GestureDetector(
-                  onTap: _load,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
+                // ── HEADER DAFTAR ─────────────────────────────────────────────
+                Row(children: [
+                  Container(
+                    width: 4, height: 20,
                     decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.refresh_rounded,
-                        color: _kPrimary, size: 18),
+                        color: _kPrimary, borderRadius: BorderRadius.circular(4)),
                   ),
-                ),
-              ]),
-              const SizedBox(height: 14),
-
-              // ── LIST ──────────────────────────────────────────────────────
-              jenisSuratList.isEmpty
-                  ? _emptyState()
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: jenisSuratList.length,
-                      itemBuilder: (_, i) =>
-                          _jenisSuratCard(jenisSuratList[i]),
+                  const SizedBox(width: 10),
+                  const Text('Daftar Jenis Surat',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold,
+                          color: Color(0xFF1B2433))),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: _load,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2)),
+                          ]),
+                      child: const Icon(Icons.refresh_rounded,
+                          color: _kPrimary, size: 18),
                     ),
-            ]),
-          );
+                  ),
+                ]),
+                const SizedBox(height: 14),
+
+                // ── LIST ──────────────────────────────────────────────────────
+                jenisSuratList.isEmpty
+                    ? _emptyState()
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: jenisSuratList.length,
+                        itemBuilder: (_, i) =>
+                            _jenisSuratCard(jenisSuratList[i]),
+                      ),
+              ]),
+            ),
+    );
   }
 
   // ── SUMMARY CARD ──────────────────────────────────────────────────────────
@@ -270,14 +283,14 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [_kPrimary, _kPrimaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [_kGradStart, _kGradEnd],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: _kPrimary.withOpacity(0.35),
+              color: _kGradEnd.withOpacity(0.35),
               blurRadius: 16,
               offset: const Offset(0, 8)),
         ],
@@ -304,7 +317,7 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
                   fontWeight: FontWeight.bold)),
         ])),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          _miniStat('Aktif', '$_totalAktif', Colors.greenAccent),
+          _miniStat('Aktif', '$_totalAktif', const Color(0xFF6EE7B7)),
           const SizedBox(height: 4),
           _miniStat('Nonaktif',
               '${jenisSuratList.length - _totalAktif}',
@@ -335,15 +348,15 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           color: showForm
-              ? Colors.grey.shade100
-              : (isEdit ? const Color(0xFFFFF7ED) : _kPrimary),
+              ? Colors.grey.shade200
+              : (isEdit ? const Color(0xFFFFF7ED) : Colors.white),
           borderRadius: BorderRadius.circular(16),
           border: showForm && isEdit
               ? Border.all(color: Colors.orange.shade200)
               : null,
           boxShadow: showForm ? [] : [
             BoxShadow(
-                color: _kPrimary.withOpacity(0.3),
+                color: Colors.black.withOpacity(0.10),
                 blurRadius: 12,
                 offset: const Offset(0, 6)),
           ],
@@ -353,8 +366,8 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
             showForm ? Icons.close_rounded
                 : (isEdit ? Icons.edit_rounded : Icons.add_rounded),
             color: showForm
-                ? Colors.grey
-                : (isEdit ? Colors.orange : Colors.white),
+                ? const Color(0xFF1B2433)
+                : (isEdit ? Colors.orange : _kPrimary),
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -363,8 +376,8 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
                 : (isEdit ? 'Edit Jenis Surat' : 'Tambah Jenis Surat'),
             style: TextStyle(
                 color: showForm
-                    ? Colors.grey.shade600
-                    : (isEdit ? Colors.orange : Colors.white),
+                    ? const Color(0xFF1B2433)
+                    : (isEdit ? Colors.orange : _kPrimary),
                 fontWeight: FontWeight.w700,
                 fontSize: 14),
           ),
@@ -382,7 +395,7 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 16,
               offset: const Offset(0, 6)),
         ],
@@ -448,7 +461,7 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
         _formDivider('Persyaratan & Tujuan'),
 
         _inp(syaratCtrl,
-            'Persyaratan (pisah dengan titik koma)',
+            'Persyaratan (lebih dari 1 pisah dengan titik koma)',
             Icons.checklist_rounded),
         Padding(
           padding: const EdgeInsets.only(top: 2, bottom: 14),
@@ -457,7 +470,7 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
         ),
 
         _inp(tujuanCtrl,
-            'Tujuan Pengajuan (pisah dengan titik koma)',
+            'Tujuan Pengajuan (lebih dari 1 pisah dengan titik koma)',
             Icons.flag_outlined),
         Padding(
           padding: const EdgeInsets.only(top: 2, bottom: 14),
@@ -475,7 +488,8 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-              color: _kBg, borderRadius: BorderRadius.circular(14)),
+              color: const Color(0xFFF8FAFF), borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200)),
           child: Row(children: [
             Container(
               padding: const EdgeInsets.all(7),
@@ -518,13 +532,27 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
         const SizedBox(height: 16),
 
         // Save button
-        SizedBox(
+        Container(
           width: double.infinity,
-          height: 50,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF10B981), Color(0xFF059669)],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                  color: const Color(0xFF10B981).withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3)),
+            ],
+          ),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: _kPrimary,
-                elevation: 0,
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14))),
             onPressed: isSaving ? null : _simpan,
@@ -579,7 +607,7 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, 4)),
         ],
@@ -771,23 +799,19 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
 
   // ── EMPTY STATE ───────────────────────────────────────────────────────────
   Widget _emptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(18)),
-      child: const Column(children: [
-        Icon(Icons.inbox_rounded, size: 40, color: Color(0xFFCBD5E1)),
-        SizedBox(height: 12),
-        Text('Belum ada jenis surat',
-            style: TextStyle(
-                color: Color(0xFF94A3B8),
-                fontSize: 14,
-                fontWeight: FontWeight.w500)),
-        SizedBox(height: 4),
-        Text('Tambahkan jenis surat menggunakan tombol di atas.',
-            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12)),
-      ]),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.inbox_outlined, size: 60, color: Colors.grey.shade400),
+          const SizedBox(height: 12),
+          Text('Belum ada jenis surat',
+              style: TextStyle(color: Colors.grey.shade600)),
+          const SizedBox(height: 4),
+          Text('Tambahkan jenis surat menggunakan tombol di atas.',
+              style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+        ]),
+      ),
     );
   }
 
@@ -803,15 +827,18 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
           labelStyle: const TextStyle(fontSize: 13),
           prefixIcon: Icon(icon, color: _kPrimary, size: 19),
           filled: true,
-          fillColor: _kBg,
+          fillColor: const Color(0xFFF8FAFF),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200)),
           focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: _kPrimary, width: 1.4)),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
         ),
       ),
     );
@@ -821,7 +848,8 @@ class _AdminJenisSuratTabState extends State<AdminJenisSuratTab> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-          color: _kBg, borderRadius: BorderRadius.circular(14)),
+          color: const Color(0xFFF8FAFF), borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: seksiId,

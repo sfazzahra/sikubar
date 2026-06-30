@@ -3,6 +3,9 @@ import 'profil_admin.dart';
 import 'tambahpengguna.dart';
 import 'tambah_jenissurat.dart';
 
+const Color _kGradStart = Color(0xFF0B2B5C);
+const Color _kGradEnd   = Color(0xFF1C4FA1);
+
 class AdminPage extends StatelessWidget {
   const AdminPage({super.key});
 
@@ -11,10 +14,19 @@ class AdminPage extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FB),
+        backgroundColor: _kGradEnd,
         appBar: AppBar(
-          backgroundColor: const Color(0xFF2F80ED),
+          backgroundColor: Colors.transparent,
           elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [_kGradStart, _kGradEnd],
+              ),
+            ),
+          ),
           title: const Text(
             'Halo Admin 👋',
             style: TextStyle(
@@ -23,7 +35,7 @@ class AdminPage extends StatelessWidget {
           bottom: const TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
+            unselectedLabelColor: Color.fromARGB(255, 255, 255, 255),
             tabs: [
               Tab(icon: Icon(Icons.people_outline), text: 'Pengguna'),
               Tab(icon: Icon(Icons.description_outlined), text: 'Jenis Surat'),

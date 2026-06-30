@@ -643,12 +643,14 @@ Container(
     ),
     borderRadius: BorderRadius.circular(16),
     boxShadow: [
-      BoxShadow(
-        color: Color.fromARGB(255, 133, 216, 170),
-        blurRadius: 14,
-        offset: Offset(0, 6),
-      ),
-    ],
+  BoxShadow(
+    color: const Color(0xFF10B981).withOpacity(0.20),
+    blurRadius: 8,
+    spreadRadius: 0,
+    offset: const Offset(0, 3),
+  ),
+],
+    
   ),
   child: ElevatedButton(
     style: ElevatedButton.styleFrom(

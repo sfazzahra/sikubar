@@ -123,7 +123,7 @@ class DatabaseSeeder extends Seeder
             ['nik' => '2101234567890001'],
             [
                 'name'     => 'Budi Santoso',
-                'nik'      => '2101234567890001',
+                'nik'      => '1234567887654321',
                 'password' => Hash::make('warga123'),
                 'role'     => 'warga',
                 'no_hp'    => '08123456789',

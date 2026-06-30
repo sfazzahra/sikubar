@@ -16,47 +16,38 @@ class _LoginPageState extends State<LoginPage> {
   String? selectedRole;
   bool isLoading = false;
 
-  final TextEditingController identifierController =
-      TextEditingController();
+  final TextEditingController identifierController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  final TextEditingController passwordController =
-      TextEditingController();
+  static const Color primaryDark = Color(0xFF0B2B5C);
+  static const Color primary = Color(0xFF1C4FA1);
+  static const Color primaryLight = Color(0xFF2F80ED);
+  static const Color ink = Color(0xFF0F1B33);
+
+  // ── HELPER: apakah role yang dipilih warga? ─────────────────────────────
+  bool get _isWarga => selectedRole == 'warga';
 
   Future<void> login() async {
-    // VALIDASI ROLE
     if (selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Pilih jenis user terlebih dahulu"),
-        ),
+        _buildSnackBar("Pilih jenis user terlebih dahulu"),
       );
       return;
     }
 
-    // VALIDASI INPUT
-    if (identifierController.text.isEmpty ||
-        passwordController.text.isEmpty) {
+    if (identifierController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Semua field harus diisi"),
-        ),
+        _buildSnackBar("Semua field harus diisi"),
       );
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
-      // ENDPOINT BERDASARKAN ROLE
-      String endpoint;
-
-      if (selectedRole == 'warga') {
-        endpoint = "http://127.0.0.1:8000/api/warga/login";
-      } else {
-        endpoint = "http://127.0.0.1:8000/api/staff/login";
-      }
+      String endpoint = selectedRole == 'warga'
+          ? "http://127.0.0.1:8000/api/warga/login"
+          : "http://127.0.0.1:8000/api/staff/login";
 
       final response = await http.post(
         Uri.parse(endpoint),
@@ -78,307 +69,332 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       final data = jsonDecode(response.body);
-
       print(data);
 
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
 
-      // LOGIN BERHASIL
       if (response.statusCode == 200) {
-        String role =
-            data['data']?['user']?['role']?.toString() ?? '';
+        String role = data['data']?['user']?['role']?.toString() ?? '';
+        final token = data['data']?['token']?.toString() ?? '';
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
 
-        final token =
-            data['data']?['token']?.toString() ?? '';
-
-        final prefs =
-            await SharedPreferences.getInstance();
-
-        await prefs.setString(
-          'auth_token',
-          token,
-        );
-
-        // VALIDASI ROLE DENGAN DROPDOWN
         if (role != selectedRole) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Role tidak sesuai"),
-            ),
+            _buildSnackBar("Role tidak sesuai"),
           );
-
           return;
         }
 
-        // REDIRECT BERDASARKAN ROLE
         if (role == 'admin') {
-          Navigator.pushReplacementNamed(
-            context,
-            '/admin',
-          );
+          Navigator.pushReplacementNamed(context, '/admin');
         } else if (role == 'warga') {
-          Navigator.pushReplacementNamed(
-            context,
-            '/beranda',
-          );
+          Navigator.pushReplacementNamed(context, '/beranda');
         } else if (role == 'petugas') {
-          Navigator.pushReplacementNamed(
-            context,
-            '/petugas',
-          );
+          Navigator.pushReplacementNamed(context, '/petugas');
         } else if (role == 'kasi') {
-          Navigator.pushReplacementNamed(
-            context,
-            '/kasi',
-          );
+          Navigator.pushReplacementNamed(context, '/kasi');
         } else if (role == 'camat') {
-          Navigator.pushReplacementNamed(
-            context,
-            '/camat',
-          );
+          Navigator.pushReplacementNamed(context, '/camat');
         }
-      }
-
-      // LOGIN GAGAL
-      else {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              data['message'] ?? 'Login gagal',
-            ),
-          ),
+          _buildSnackBar(data['message'] ?? 'Login gagal'),
         );
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Terjadi kesalahan: $e"),
-        ),
+        _buildSnackBar("Terjadi kesalahan: $e"),
       );
     }
+  }
+
+  SnackBar _buildSnackBar(String message) {
+    return SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: ink,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      margin: const EdgeInsets.all(16),
+      content: Text(message, style: const TextStyle(color: Colors.white)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF2F80ED),
-              Color(0xFF1C4FA1),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      backgroundColor: primaryDark,
+      body: Stack(
+        children: [
+          // ── BACKGROUND dari kode 2 ──
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [primaryDark, primary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
           ),
-        ),
-
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                
-               Image.asset(
-  'assets/images/LogoSiKubar.png', // sesuaikan nama file
-  width: 105,
-  height: 105,
-),
-
-                const Text(
-                  "Pelayanan Publik",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          Positioned(
+            top: -120,
+            right: -90,
+            child: Transform.rotate(
+              angle: 0.5,
+              child: Container(
+                width: 320,
+                height: 320,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(60),
+                  gradient: LinearGradient(
+                    colors: [
+                      primaryLight.withOpacity(0.35),
+                      primaryLight.withOpacity(0.0),
+                    ],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
                   ),
                 ),
-
-                const Text(
-                  "Kantor Kecamatan Kundur Barat",
-                  style: TextStyle(
-                    color: Colors.white70,
-                  ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -140,
+            left: -100,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.06),
+                  width: 40,
                 ),
+              ),
+            ),
+          ),
 
-                const SizedBox(height: 30),
+          // ── KONTEN ──
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                child: Column(
+                  children: [
+                    // Logo + nama instansi
+                    Image.asset(
+                      'assets/images/LogoSiKubar.png',
+                      width: 90,
+                      height: 90,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Pelayanan Publik",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      "Kantor Kecamatan Kundur Barat",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 13,
+                      ),
+                    ),
 
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                  ),
+                    const SizedBox(height: 32),
 
-                  padding: const EdgeInsets.all(20),
-
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-
-                  child: Column(
-                    children: [
-                      /// DROPDOWN ROLE
-                      DropdownButtonFormField<String>(
-                        value: selectedRole,
-
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(
-                            Icons.person_outline,
-                          ),
-
-                          hintText: "Pilih Jenis User",
-
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-
-                        items: const [
-                          DropdownMenuItem(
-                            value: "warga",
-                            child: Text("Warga"),
-                          ),
-
-                          DropdownMenuItem(
-                            value: "petugas",
-                            child: Text("Petugas Kecamatan"),
-                          ),
-
-                          DropdownMenuItem(
-                            value: "kasi",
-                            child: Text("Kepala Seksi (kasi)"),
-                          ),
-
-                          DropdownMenuItem(
-                            value: "camat",
-                            child: Text("Camat"),
-                          ),
-
-                          DropdownMenuItem(
-                            value: "admin",
-                            child: Text("Admin"),
+                    // ── CARD / KOTAK PUTIH (dari kode 1) ──
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.18),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
                           ),
                         ],
-
-                        onChanged: (value) {
-                          setState(() {
-                            selectedRole = value;
-                          });
-                        },
                       ),
-
-                      const SizedBox(height: 15),
-
-                      /// IDENTIFIER
-                      TextField(
-                        controller: identifierController,
-
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.person),
-
-                          hintText: "NIK/Email",
-
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      /// PASSWORD
-                      TextField(
-                        controller: passwordController,
-                        obscureText: obscurePassword,
-
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.lock),
-
-                          hintText: "Kata Sandi",
-
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Dropdown role
+                          DropdownButtonFormField<String>(
+                            value: selectedRole,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.person_outline),
+                              hintText: "Pilih Jenis User",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: primary,
+                                  width: 2,
+                                ),
+                              ),
                             ),
-
-                            onPressed: () {
+                            items: const [
+                              DropdownMenuItem(value: "warga", child: Text("Warga")),
+                              DropdownMenuItem(value: "petugas", child: Text("Petugas Kecamatan")),
+                              DropdownMenuItem(value: "kasi", child: Text("Kepala Seksi (Kasi)")),
+                              DropdownMenuItem(value: "camat", child: Text("Camat")),
+                              DropdownMenuItem(value: "admin", child: Text("Admin")),
+                            ],
+                            onChanged: (value) {
                               setState(() {
-                                obscurePassword = !obscurePassword;
+                                selectedRole = value;
+                                // reset input identifier setiap ganti role,
+                                // karena format NIK vs Email berbeda
+                                identifierController.clear();
                               });
                             },
                           ),
-                        ),
-                      ),
 
-                      const SizedBox(height: 10),
+                          const SizedBox(height: 16),
 
-                      Align(
-                        alignment: Alignment.centerRight,
-
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text("Lupa password?"),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      /// BUTTON MASUK
-                      SizedBox(
-                        width: double.infinity,
-                        height: 45,
-
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1C4FA1),
+                          // ── NIK (warga) / Email (staff) — menyesuaikan role ──
+                          TextField(
+                            controller: identifierController,
+                            enabled: selectedRole != null,
+                            keyboardType: selectedRole == null
+                                ? TextInputType.text
+                                : (_isWarga
+                                    ? TextInputType.number
+                                    : TextInputType.emailAddress),
+                            inputFormatters: null,
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(
+                                selectedRole == null
+                                    ? Icons.person
+                                    : (_isWarga
+                                        ? Icons.badge_outlined
+                                        : Icons.email_outlined),
+                              ),
+                              hintText: selectedRole == null
+                                  ? "Pilih jenis user dahulu"
+                                  : (_isWarga ? "NIK (16 digit)" : "Email"),
+                              labelText: selectedRole == null
+                                  ? null
+                                  : (_isWarga ? "NIK" : "Email"),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              disabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: primary,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
                           ),
 
-                          onPressed: isLoading
-                              ? null
-                              : () {
-                                  login();
-                                },
+                          const SizedBox(height: 16),
 
-                          child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  "Masuk",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          // Password
+                          TextField(
+                            controller: passwordController,
+                            obscureText: obscurePassword,
+                            enabled: selectedRole != null,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.lock),
+                              hintText: "Kata Sandi",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              disabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: primary,
+                                  width: 2,
                                 ),
-                        ),
-                      ),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    obscurePassword = !obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
 
-                      const SizedBox(height: 10),
+                          const SizedBox(height: 24),
 
-                      const Text(
-                        "© Kantor Kecamatan Kundur Barat",
-                        style: TextStyle(fontSize: 12),
+                          // Tombol Masuk
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: isLoading ? null : login,
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.4,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Masuk",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          Center(
+                            child: Text(
+                              "© Kantor Kecamatan Kundur Barat",
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
